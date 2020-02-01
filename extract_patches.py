@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 import cv2
+import time
 
 from kernel_slide import get_cell_patch
 
@@ -148,6 +149,8 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
 
 def control(args):
 
+    start = time.time()
+
     # Get coordinates of each cell using a mask image
     path_to_mask = 'something'
     kernel_size = (args.kernel_size, args.kernel_size)
@@ -185,6 +188,9 @@ def control(args):
 
         image_counter += 1
 
+    print('Process complete.....Time taken:{} seconds..'.format(
+        str(round(time.time() - start, 3))))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -203,11 +209,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--kernel_size',
         type=int,
+        default=80,
         help='size of kernel window')
 
     parser.add_argument(
         '--slack',
         type=int,
+        default=10,
         help='allowance while cropping')
 
     args = parser.parse_args()
