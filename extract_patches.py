@@ -146,26 +146,27 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
             image_path + '/image_{}'.format(image_counter),
             cell_patch)
 
-def control(FL_DIR, kernel_size=(80, 80), slack=15):
-    fl_files = os.listdir(FL_DIR)
+def control(args):
+    fl_files = os.listdir(args.FL_DIR)
 
     # Filter out files that have 'z1c1' in them
     fl_files = [
-        FL_DIR + '/' + fl_file
+        args.FL_DIR + '/' + fl_file
         for fl_file in fl_files
         if 'z1c1' in fl_file]
     fl_files = sorted(fl_files)
 
-    IMAGE_DIR = 'location where images will get saved'
     image_counter = 0
+    kernel_size = (args.kernel_size, args.kernel_size)
+
     for fl_file in fl_files:
         
         get_cell_patch(
             fl_file,
             unique_id_to_coordinates,
-            slack=slack,
+            slack=args.slack,
             kernel_size=kernel_size,
-            IMAGE_DIR=IMAGE_DIR,
+            IMAGE_DIR=args.IMAGE_DIR,
             image_counter=image_counter)
             
         if image_counter % 50 == 0:
@@ -174,9 +175,33 @@ def control(FL_DIR, kernel_size=(80, 80), slack=15):
 
         image_counter += 1
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='params of running the experiment')
+
+    parser.add_argument(
+        '--FL_DIR',
+        type=str,
+        help='path to Fluorescent images')
+
+    parser.add_argument(
+        '--IMAGE_DIR',
+        type=str,
+        help='path where images will get saved')
+
+    parser.add_argument(
+        '--kernel_size',
+        type=int,
+        help='size of kernel window')
+
+    parser.add_argument(
+        '--slack',
+        type=int,
+        help='allowance while cropping')
+
+    args = parser.parse_args()
+    control(args)
 
 kernel_size = (80, 80)
 path = '/Users/rohitsaha/Documents/Spring 2020/CSC2516HS/project/'
