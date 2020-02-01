@@ -4,6 +4,8 @@ import cv2
 
 from kernel_slide import get_cell_patch
 
+import argparse
+
 def get_unique_ids(image):
     '''Returns the unique elements in a
     matrix.
@@ -42,19 +44,17 @@ def get_mask_for_id(image, unique_id):
     return image
 
 
-def process_image(filename, fl_filename, kernel_size):
+def get_coordinates(filename, kernel_size):
     image = Image.open(
         filename)
     image = np.array(
         image)
-    #fl_image = Image.open(
-    #    fl_filename)
-    #fl_image = np.array(
-    #    fl_image)
 
     unique_ids = get_unique_ids(
         image)
-    
+    import ipdb; ipdb.set_trace()    
+    unique_id_to_coordinates = {}
+
     ctr = 0
     threshold = 500
 
@@ -78,16 +78,11 @@ def process_image(filename, fl_filename, kernel_size):
             # :loc_h and :loc_w are the (y, x) coordinates
             # of where the cell starts.
 
-            # Fetch the required cell from fluorescence
-            # image using :loc_h and :loc_w. Pad the matrix
-            # with zeros on all sides to allow some slack.
-            # This is done because the cell in subsequent
-            # frames might grow/shrink. Therefore, the
-            # coordinated should be relaxed.
-            start_h = loc_h - 15
-            end_h = loc_h + kernel_size[0] + 15
-            start_w = loc_w - 15 
-            end_w = loc_w + kernel_size[1] + 15
+            
+            
+            unique_id_to_coordinates[unique_id] = (
+                loc_h, loc_w)
+            
             
             #fl_cell_patch = fl_image[
             #    start_h : end_h,
@@ -101,11 +96,6 @@ def process_image(filename, fl_filename, kernel_size):
 
             # created_image = created_image + masked_image
 
-            cv2.imwrite(
-                path + 'pics_2/demo_{}.png'.format(str(ctr)),
-                cell_patch)
-
-            break
 
         ctr += 1        
 
@@ -113,12 +103,85 @@ def process_image(filename, fl_filename, kernel_size):
             print('Processed {}/{} ids'.format(
                 ctr, len(unique_ids)))
 
-        # cv2.imwrite('generated.png', created_image)
+    return unique_id_to_coordinates
+
+def get_cell_patch(fl_filename, unique_id_to_coordinates,
+                    slack=15, kernel_size=(80, 80),
+                    IMAGE_DIR='', image_counter=0):
+
+    fl_image = Image.open(
+        fl_filename)
+    fl_image = np.array(
+        fl_image)
+
+    for unique_id in unique_id_to_coordinates.keys():
+        loc_h, loc_w = unique_id_to_coordinates[unique_id]    
+        
+        # Fetch the required cell from fluorescence
+        # image using :loc_h and :loc_w. Pad the matrix
+        # with zeros on all sides to allow some slack.
+        # This is done because the cell in subsequent
+        # frames might grow/shrink. Therefore, the
+        # coordinated should be relaxed.
+        start_h = loc_h - slack
+        end_h = loc_h + kernel_size[0] + slack
+        start_w = loc_w - slack 
+        end_w = loc_w + kernel_size[1] + slack
+
+        cell_patch = fl_image[
+            start_h : end_h,
+            start_w : end_w]
+
+        # saving the image to disk
+        unique_id_str = str(unique_id).replace('.', '-')          
+ 
+        image_path = os.path.join(
+            IMAGE_DIR,
+            unique_id_str)
+
+        if not os.path.exists(image_path):
+            os.makedirs(image_path)
+
+        cv2.imwrite(
+            image_path + '/image_{}'.format(image_counter),
+            cell_patch)
+
+def control(FL_DIR, kernel_size=(80, 80), slack=15):
+    fl_files = os.listdir(FL_DIR)
+
+    # Filter out files that have 'z1c1' in them
+    fl_files = [
+        FL_DIR + '/' + fl_file
+        for fl_file in fl_files
+        if 'z1c1' in fl_file]
+    fl_files = sorted(fl_files)
+
+    IMAGE_DIR = 'location where images will get saved'
+    image_counter = 0
+    for fl_file in fl_files:
+        
+        get_cell_patch(
+            fl_file,
+            unique_id_to_coordinates,
+            slack=slack,
+            kernel_size=kernel_size,
+            IMAGE_DIR=IMAGE_DIR,
+            image_counter=image_counter)
+            
+        if image_counter % 50 == 0:
+            print('Finished writing {}/{} images for each\
+                cell'.format(image_counter, len(fl_files)))
+
+        image_counter += 1
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='params of running the experiment')
 
 kernel_size = (80, 80)
 path = '/Users/rohitsaha/Documents/Spring 2020/CSC2516HS/project/'
 
 filename = path + 'mask_601z1c2.tif'
 fl_filename = path + 'fluorescence_601z1c2.tif' 
-process_image(filename, fl_filename, kernel_size)
+get_coordinates(filename, kernel_size)
 
