@@ -3,7 +3,22 @@ import numpy as np
 import cv2
 
 def get_cell_patch(image, kernel_size, unique_id):
-
+    '''Finds the location of the cell using
+    the mask image
+    Args:
+        image: 'Numpy' matrix of the mask
+        kernel_size: 'Tuple' to mention the size
+            of the kernel window
+        unique_id: 'Float' to mention the class id
+            of the cell of interest
+    Returns:
+        image: 'Numpy' matrix of tight bounding box
+            segmented cell
+        new_h: 'Integer' that specifies the y_coord
+            starting point of the cell
+        new_w: 'Integer' that specifies the x_coord
+            starting point of the cell
+    '''
     height, width = image.shape
 
     height -= kernel_size[0]
@@ -45,6 +60,19 @@ def get_cell_patch(image, kernel_size, unique_id):
 
 
 def get_tight_bounding_box(image, unique_id):
+    '''Computes a tight bounding box over the 
+    cell of interest
+    Args:
+        image: 'Numpy' matrix of cropped segmented
+            cell
+        unique_id: 'Float' to mention the class id
+            of the cell of interest
+    Returns:
+        image: 'Numpy' matrix of tight bounding box
+            segmented cell
+        h: 'Integer' that mentions the adjusted y_coord
+        w: 'Integer' that mentions the adjusted x_coord
+    ''' 
     height, width = image.shape
 
     for h in range(height):
