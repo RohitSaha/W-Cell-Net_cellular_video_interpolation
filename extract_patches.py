@@ -1,17 +1,20 @@
 import numpy as np
 from PIL import Image
 import cv2
-import time
 
 from kernel_slide import get_cell_patch
 
 import argparse
+import time
+
+#TODO: change default folders based on Valrhona dir struct
+#TODO: comment functions
 
 def get_unique_ids(image):
     '''Returns the unique elements in a
     matrix.
     Args:
-        :image: 'Numpy' matrix
+        image: 'Numpy' matrix
     returns:
         Unique values in a matrix of type
         'Numpy'
@@ -46,6 +49,14 @@ def get_mask_for_id(image, unique_id):
 
 
 def get_coordinates(filename, kernel_size):
+    '''Get coordinates of individual cells using a
+    mask image
+    Args:
+        filename: 'String' that points to the location
+            of the file
+        kernel_size: 'Tuple' that contains the size of
+            the kernel window
+    '''
     image = Image.open(
         filename)
     image = np.array(
@@ -109,7 +120,23 @@ def get_coordinates(filename, kernel_size):
 def get_cell_patch(fl_filename, unique_id_to_coordinates,
                     slack=15, kernel_size=(80, 80),
                     IMAGE_DIR='', image_counter=0):
-
+    '''Uses coordinates to extract cell patches from the
+    fluorescent image
+    Args:
+        fl_filename: 'String' that has the path to the
+            fluorescent image
+        unique_id_to_coordinates: 'Dict' with unique_id as
+            keys and coordinates as values
+        slack: 'Integer' to mention allowance while cropping
+        kernel_size: 'Tuple' that contains the size of the
+            kernel window
+        IMAGE_DIR: 'String' that has the path where the
+            extracted cell patch will get saved
+        image_counter: 'Integer' that counts the sequence
+            of images
+    Returns:
+        None
+    ''' 
     fl_image = Image.open(
         fl_filename)
     fl_image = np.array(
@@ -148,7 +175,13 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
             cell_patch)
 
 def control(args):
-
+    '''Interface function to extract patches and save
+    them in respective folders
+    Args:
+        args: 'argparse' instance
+    Returns:
+        None
+    '''
     start = time.time()
 
     # Get coordinates of each cell using a mask image
