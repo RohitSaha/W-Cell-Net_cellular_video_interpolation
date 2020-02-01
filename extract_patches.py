@@ -2,6 +2,8 @@ import numpy as np
 from PIL import Image
 import cv2
 
+from kernel_slide import get_cell_patch
+
 def get_unique_ids(image):
     '''Returns the unique elements in a
     matrix.
@@ -11,14 +13,15 @@ def get_unique_ids(image):
         Unique values in a matrix of type
         'Numpy'
     '''
-    counts = np.unique(
+    unique_ids = np.unique(
         image)
 
-    # :counts include '0' in the first index.
+    # :unique_ids include '0' in the first index.
     # We want to ignore since '0' represents
     # background.
-    return counts[1:]
+    return unique_ids[1:]
 
+# LEGACY
 def get_mask_for_id(image, unique_id):
     '''Returns a patch, that captures a cell
     given the id.
@@ -38,20 +41,16 @@ def get_mask_for_id(image, unique_id):
 
     return image
 
-def get_patch(masked_image):
-    # Get the patch with the cell of importance is
-    # in the center.
-    #TODO
 
-def process_image(filename, fl_filename):
+def process_image(filename, fl_filename, kernel_size):
     image = Image.open(
         filename)
     image = np.array(
         image)
-    fl_image = Image.open(
-        fl_filename)
-    fl_image = np.array(
-        fl_image)
+    #fl_image = Image.open(
+    #    fl_filename)
+    #fl_image = np.array(
+    #    fl_image)
 
     unique_ids = get_unique_ids(
         image)
@@ -63,35 +62,50 @@ def process_image(filename, fl_filename):
         image.shape)
 
     for unique_id in unique_ids:
-        mask = get_mask_for_id(
-            image,
-            unique_id)
+        mask = np.where(
+            image == unique_id,
+            1,
+            0)
 
-        masked_image = np.multiply(
-            image,
-            mask)
+        count = np.sum(mask)
 
-        # There are many false positives in some
-        # of the :masked_image. One possible idea
-        # is to count the number of non-zero elements
-        # after masking and consider the ones that
-        # have counts > threshold.
-        counts = np.count_nonzero(
-            masked_image == unique_id)
+        if count > threshold:
+            cell_patch, loc_h, loc_w = get_cell_patch( 
+                image,
+                kernel_size,
+                unique_id)
 
-        
-        if counts > threshold:
-            masked_image = np.where(
-                masked_image == unique_id,
+            # :loc_h and :loc_w are the (y, x) coordinates
+            # of where the cell starts.
+
+            # Fetch the required cell from fluorescence
+            # image using :loc_h and :loc_w. Pad the matrix
+            # with zeros on all sides to allow some slack.
+            # This is done because the cell in subsequent
+            # frames might grow/shrink. Therefore, the
+            # coordinated should be relaxed.
+            start_h = loc_h - 15
+            end_h = loc_h + kernel_size[0] + 15
+            start_w = loc_w - 15 
+            end_w = loc_w + kernel_size[1] + 15
+            
+            #fl_cell_patch = fl_image[
+            #    start_h : end_h,
+            #    start_w : end_w]
+            
+            # For debugging purposes
+            cell_patch = np.where(
+                cell_patch == unique_id,
                 250,
                 0)
 
-            created_image = created_image + masked_image
+            # created_image = created_image + masked_image
 
-            # centered_image = get_patch(
-            #    masked_image)
+            cv2.imwrite(
+                path + 'pics_2/demo_{}.png'.format(str(ctr)),
+                cell_patch)
 
-            # cv2.imwrite('pics/demo_{}.png'.format(str(ctr)), masked_image)
+            break
 
         ctr += 1        
 
@@ -99,9 +113,12 @@ def process_image(filename, fl_filename):
             print('Processed {}/{} ids'.format(
                 ctr, len(unique_ids)))
 
-        cv2.imwrite('generated.png', created_image)
+        # cv2.imwrite('generated.png', created_image)
 
-filename = 'mask_601z1c2.tif'
-fl_filename = 'fluorescence_601z1c2.tif' 
-process_image(filename, fl_image)
+kernel_size = (80, 80)
+path = '/Users/rohitsaha/Documents/Spring 2020/CSC2516HS/project/'
+
+filename = path + 'mask_601z1c2.tif'
+fl_filename = path + 'fluorescence_601z1c2.tif' 
+process_image(filename, fl_filename, kernel_size)
 
