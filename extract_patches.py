@@ -147,6 +147,17 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
             cell_patch)
 
 def control(args):
+
+    # Get coordinates of each cell using a mask image
+    path_to_mask = 'something'
+    kernel_size = (args.kernel_size, args.kernel_size)
+    unique_id_to_coordinates = get_coordinates(
+        path_to_mask,
+        kernel_size)
+
+    # Extract cells from fluorescent image using the
+    # above coordinates and write each extracted patch
+    # to respective folder
     fl_files = os.listdir(args.FL_DIR)
 
     # Filter out files that have 'z1c1' in them
@@ -157,7 +168,6 @@ def control(args):
     fl_files = sorted(fl_files)
 
     image_counter = 0
-    kernel_size = (args.kernel_size, args.kernel_size)
 
     for fl_file in fl_files:
         
