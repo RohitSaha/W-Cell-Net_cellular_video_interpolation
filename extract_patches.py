@@ -4,11 +4,11 @@ import cv2
 
 from kernel_slide import get_cell_patch
 
+import pickle
 import argparse
 import time
 
 #TODO: change default folders based on Valrhona dir struct
-#TODO: comment functions
 
 def get_unique_ids(image):
     '''Returns the unique elements in a
@@ -190,6 +190,15 @@ def control(args):
     unique_id_to_coordinates = get_coordinates(
         path_to_mask,
         kernel_size)
+
+    # save :unique_id_to_coordinates to disk
+    with open(
+        IMAGE_DIR + '/meta_file/unique_id_to_coord.pkl',
+        'wb') as handle:
+        pickle.dump(
+            unique_id_to_coordinates,
+            handle)
+    print('Coordinates calculated.....Pickle file dumped.....')
 
     # Extract cells from fluorescent image using the
     # above coordinates and write each extracted patch
