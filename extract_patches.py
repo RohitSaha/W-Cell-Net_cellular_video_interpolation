@@ -171,7 +171,7 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
             os.makedirs(image_path)
 
         cv2.imwrite(
-            image_path + '/image_{}'.format(image_counter),
+            image_path + '/image_{}.png'.format(image_counter),
             cell_patch)
 
 def control(args):
