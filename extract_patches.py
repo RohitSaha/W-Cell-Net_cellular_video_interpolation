@@ -2,11 +2,12 @@ import numpy as np
 from PIL import Image
 import cv2
 
-from kernel_slide import get_cell_patch
+from kernel_slide import get_cell_patch as gcp
 
 import pickle
 import argparse
 import time
+import os
 
 #TODO: change default folders based on Valrhona dir struct
 
@@ -64,7 +65,7 @@ def get_coordinates(filename, kernel_size):
 
     unique_ids = get_unique_ids(
         image)
-    import ipdb; ipdb.set_trace()    
+
     unique_id_to_coordinates = {}
 
     ctr = 0
@@ -82,7 +83,7 @@ def get_coordinates(filename, kernel_size):
         count = np.sum(mask)
 
         if count > threshold:
-            cell_patch, loc_h, loc_w = get_cell_patch( 
+            cell_patch, loc_h, loc_w = gcp( 
                 image,
                 kernel_size,
                 unique_id)
@@ -90,15 +91,8 @@ def get_coordinates(filename, kernel_size):
             # :loc_h and :loc_w are the (y, x) coordinates
             # of where the cell starts.
 
-            
-            
             unique_id_to_coordinates[unique_id] = (
                 loc_h, loc_w)
-            
-            
-            #fl_cell_patch = fl_image[
-            #    start_h : end_h,
-            #    start_w : end_w]
             
             # For debugging purposes
             cell_patch = np.where(
@@ -108,14 +102,15 @@ def get_coordinates(filename, kernel_size):
 
             # created_image = created_image + masked_image
 
-
         ctr += 1        
 
         if ctr % 500 == 0:
             print('Processed {}/{} ids'.format(
                 ctr, len(unique_ids)))
 
+
     return unique_id_to_coordinates
+
 
 def get_cell_patch(fl_filename, unique_id_to_coordinates,
                     slack=15, kernel_size=(80, 80),
@@ -187,15 +182,19 @@ def control(args):
     start = time.time()
 
     # Get coordinates of each cell using a mask image
-    path_to_mask = 'something'
+    mask_file = 'gcamp3_3aidr_dzf_gfp_2020_01_09_3t001z1c2.tif'
+    path_to_mask = '/neuhaus/movie/masks/'
+    final_mask_path = path_to_mask + mask_file
+
+    print('Extracting coordinates from the mask.....')
     kernel_size = (args.kernel_size, args.kernel_size)
     unique_id_to_coordinates = get_coordinates(
-        path_to_mask,
+        final_mask_path,
         kernel_size)
 
     # save :unique_id_to_coordinates to disk
     with open(
-        IMAGE_DIR + '/meta_file/unique_id_to_coord.pkl',
+        args.IMAGE_DIR + '/meta_file/unique_id_to_coord.pkl',
         'wb') as handle:
         pickle.dump(
             unique_id_to_coordinates,
@@ -227,8 +226,9 @@ def control(args):
             image_counter=image_counter)
             
         if image_counter % 50 == 0:
-            print('Finished writing {}/{} images for each\
-                cell'.format(image_counter, len(fl_files)))
+            print('Wrote {}/{} images for each cell'.format(
+                image_counter,
+                len(fl_files)))
 
         image_counter += 1
 
@@ -243,11 +243,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--FL_DIR',
         type=str,
+        default='/neuhaus/movie',
         help='path to Fluorescent images')
 
     parser.add_argument(
         '--IMAGE_DIR',
         type=str,
+        default='/neuhaus/movie/dataset',
         help='path where images will get saved')
 
     parser.add_argument(
@@ -265,10 +267,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     control(args)
 
-kernel_size = (80, 80)
-path = '/Users/rohitsaha/Documents/Spring 2020/CSC2516HS/project/'
-
-filename = path + 'mask_601z1c2.tif'
-fl_filename = path + 'fluorescence_601z1c2.tif' 
-get_coordinates(filename, kernel_size)
 
