@@ -137,6 +137,8 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
     fl_image = np.array(
         fl_image)
 
+    fl_image_height, fl_image_width = fl_image.shape
+
     for unique_id in unique_id_to_coordinates.keys():
         loc_h, loc_w = unique_id_to_coordinates[unique_id]    
         
@@ -146,10 +148,17 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
         # This is done because the cell in subsequent
         # frames might grow/shrink. Therefore, the
         # coordinated should be relaxed.
-        start_h = loc_h - slack
+
+        start_h = loc_h - slack 
         end_h = loc_h + kernel_size[0] + slack
         start_w = loc_w - slack 
         end_w = loc_w + kernel_size[1] + slack
+
+        # Check for edge cases:
+        if start_h < 0: start_h = 0
+        if end_h >= fl_image_height: end_h = fl_image_height - 1
+        if start_w < 0: start_w = 0
+        if end_w >= fl_image_width: end_w = fl_image_width - 1
 
         cell_patch = fl_image[
             start_h : end_h,
@@ -180,7 +189,6 @@ def control(args):
         None
     '''
     start = time.time()
-
     # Get coordinates of each cell using a mask image
     mask_file = 'gcamp3_3aidr_dzf_gfp_2020_01_09_3t001z1c2.tif'
     path_to_mask = '/neuhaus/movie/masks/'
@@ -191,7 +199,7 @@ def control(args):
     unique_id_to_coordinates = get_coordinates(
         final_mask_path,
         kernel_size)
-
+    
     # save :unique_id_to_coordinates to disk
     with open(
         args.IMAGE_DIR + '/meta_file/unique_id_to_coord.pkl',
