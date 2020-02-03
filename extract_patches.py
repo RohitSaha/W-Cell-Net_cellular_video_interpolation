@@ -104,7 +104,7 @@ def get_coordinates(filename, kernel_size):
 
         ctr += 1        
 
-        if ctr % 500 == 0:
+        if ctr % 100 == 0:
             print('Processed {}/{} ids'.format(
                 ctr, len(unique_ids)))
 
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--slack',
         type=int,
-        default=10,
+        default=20,
         help='allowance while cropping')
 
     args = parser.parse_args()
