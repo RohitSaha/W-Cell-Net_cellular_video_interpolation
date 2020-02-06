@@ -7,7 +7,7 @@ def read_and_decode(filename_queue=[], is_training=False,
                     batch_size=32, height=100, width=100,
                     n_intermediate_frames=3):
 
-    reader = tf.RecordReader()
+    reader = tf.TFRecordReader()
     _, ser = reader.read(
         filename_queue)
 
@@ -31,15 +31,15 @@ def read_and_decode(filename_queue=[], is_training=False,
 
     fFrame = tf.decode_raw(
         parsed['data/first_frame'],
-        tf.uint8)
+        tf.int32)
 
     lFrame = tf.decode_raw(
         parsed['data/last_frame'],
-        tf.uint8)
+        tf.int32)
 
     iFrame = tf.decode_raw(
         parsed['data/intermediate_frames'],
-        tf.uint8)
+        tf.int32)
 
     meta_file_names = parsed['data/meta_file_names']
 
@@ -58,7 +58,7 @@ def read_and_decode(filename_queue=[], is_training=False,
 
     # check flag for augmentations
     if is_training:
-        fFrame, lFrame = tf_augmentations.augment(
+        fFrame, lFrame, iFrame = tf_augmentations.augment(
             fFrame,
             lFrame,
             iFrame)
@@ -89,31 +89,36 @@ def read_and_decode(filename_queue=[], is_training=False,
             num_threads=2)
 
     else:
-        fFrames, lFrames, iFrames = tf.train.batch(
-            [fFrame, lFrame, iFrame],
+        #fFrames, lFrames, iFrames = tf.train.batch(
+        #    [fFrame, lFrame, iFrame],
+        return fFrame, lFrame
+
+        fFrames, lFrames = tf.train.batch(
+            [fFrame, lFrame],
             batch_size=batch_size,
             capacity=1000,
             allow_smaller_final_batch=False,
             num_threads=2)
 
-    return fFrames, lFrames, iFrames
+    return fFrames, lFrames#, iFrames
 
 
 def unit_test():
     current_path = os.path.join(
         '/neuhaus/movie/dataset',
         'tf_records',
-        'slack_20px_fluorescent_window')
+        'slack_20px_fluorescent_window_5')
 
     filename = 'train.tfrecords'
     final_path = os.path.join(
         current_path,
         filename)
+    final_path = '/neuhaus/movie/dataset/tf_records/slack_20px_fluorescent_window_5/train.tfrecords'
 
     with tf.Session().as_default() as sess:
         train_queue = tf.train.string_input_producer(
             [final_path], num_epochs=None)
-        fFrames, lFrames, iFrames = read_and_decode(
+        fFrames, lFrames = read_and_decode(
             filename_queue=train_queue,
             is_training=False)
 
@@ -127,9 +132,9 @@ def unit_test():
             coord=coord)
 
         for i in range(100):
-            fF, lF, iF = sess.run([
-                fFrames, lFrames, iFrames])
+            fF, lF = sess.run([
+                fFrames, lFrames])
 
-            print(fF.shape, lF.shape, iF,shape) 
+            print(fF.shape, lF.shape) 
 
 unit_test()
