@@ -31,31 +31,31 @@ def read_and_decode(filename_queue=[], is_training=False,
 
     fFrame = tf.decode_raw(
         parsed['data/first_frame'],
-        tf.int32)
+        tf.uint8)
 
     lFrame = tf.decode_raw(
         parsed['data/last_frame'],
-        tf.int32)
+        tf.uint8)
 
     iFrame = tf.decode_raw(
         parsed['data/intermediate_frames'],
-        tf.int32)
+        tf.uint8)
 
     meta_file_names = parsed['data/meta_file_names']
 
     # reshape images
     fFrame = tf.reshape(
         fFrame,
-        [height, width])
+        [height, width, 1])
 
     lFrame = tf.reshape(
         lFrame,
-        [height, width])
+        [height, width, 1])
 
     iFrame = tf.reshape(
         iFrame,
-        [n_intermediate_frames, height, width])
-
+        [n_intermediate_frames, height, width, 1])
+    
     # check flag for augmentations
     if is_training:
         fFrame, lFrame, iFrame = tf_augmentations.augment(
@@ -80,8 +80,8 @@ def read_and_decode(filename_queue=[], is_training=False,
     iFrame = iFrame / 127.5 - 1.
 
     if is_training:
-        fFrames, lFrames, iFrames = tf.train.shuffle_batch(
-            [fFrame, lFrame, iFrame],
+        fFrames, lFrames, iFrames, mfn = tf.train.shuffle_batch(
+            [fFrame, lFrame, iFrame, meta_file_names],
             batch_size=batch_size,
             capacity=1000,
             min_after_dequeue=500,
@@ -89,18 +89,14 @@ def read_and_decode(filename_queue=[], is_training=False,
             num_threads=2)
 
     else:
-        #fFrames, lFrames, iFrames = tf.train.batch(
-        #    [fFrame, lFrame, iFrame],
-        return fFrame, lFrame
-
-        fFrames, lFrames = tf.train.batch(
-            [fFrame, lFrame],
+        fFrames, lFrames, iFrames, mfn = tf.train.batch(
+            [fFrame, lFrame, iFrame, meta_file_names],
             batch_size=batch_size,
             capacity=1000,
             allow_smaller_final_batch=False,
             num_threads=2)
 
-    return fFrames, lFrames#, iFrames
+    return fFrames, lFrames, iFrames, mfn
 
 
 def unit_test():
@@ -113,12 +109,11 @@ def unit_test():
     final_path = os.path.join(
         current_path,
         filename)
-    final_path = '/neuhaus/movie/dataset/tf_records/slack_20px_fluorescent_window_5/train.tfrecords'
 
     with tf.Session().as_default() as sess:
         train_queue = tf.train.string_input_producer(
             [final_path], num_epochs=None)
-        fFrames, lFrames = read_and_decode(
+        fFrames, lFrames, iFrames, mfns = read_and_decode(
             filename_queue=train_queue,
             is_training=False)
 
@@ -131,10 +126,24 @@ def unit_test():
         threads = tf.train.start_queue_runners(
             coord=coord)
 
-        for i in range(100):
-            fF, lF = sess.run([
-                fFrames, lFrames])
+        import time
+        start = time.time()
+        for i in range(200):
+            fF, lF, iF, mFN = sess.run(
+                [
+                    fFrames,
+                    lFrames,
+                    iFrames,
+                    mfns])
 
-            print(fF.shape, lF.shape) 
+            print(fF.shape, lF.shape, iF.shape) #, mFN) 
 
-unit_test()
+        print('Time taken:{} seconds.....'.format(
+            str(
+                round(
+                    time.time() - start,
+                    3))))
+
+        coord.request_stop()
+
+# unit_test()
