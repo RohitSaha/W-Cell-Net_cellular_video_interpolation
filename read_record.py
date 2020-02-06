@@ -99,7 +99,7 @@ def read_and_decode(filename_queue=[], is_training=False,
     return fFrames, lFrames, iFrames
 
 
-def unit_test()
+def unit_test():
     current_path = os.path.join(
         '/neuhaus/movie/dataset',
         'tf_records',
