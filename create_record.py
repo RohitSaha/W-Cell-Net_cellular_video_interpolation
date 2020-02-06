@@ -7,6 +7,7 @@ import argparse
 
 import tensorflow as tf
 
+# TODO: document code
 
 def get_data(IMAGE_DIR, window):
     
