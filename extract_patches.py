@@ -165,7 +165,7 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
             start_w : end_w]
 
         # saving the image to disk
-        unique_id_str = str(unique_id).replace('.', '-')          
+        unique_id_str = str(unique_id) # + '_brightfield' 
  
         image_path = os.path.join(
             IMAGE_DIR,
@@ -176,7 +176,7 @@ def get_cell_patch(fl_filename, unique_id_to_coordinates,
 
         cv2.imwrite(
             image_path + '/image_{}.png'.format(
-                str(image_counter)),
+                str(image_counter).zfill(3)),
             cell_patch)
 
 
@@ -189,6 +189,7 @@ def control(args):
         None
     '''
     start = time.time()
+    '''
     # Get coordinates of each cell using a mask image
     mask_file = 'gcamp3_3aidr_dzf_gfp_2020_01_09_3t001z1c2.tif'
     path_to_mask = '/neuhaus/movie/masks/'
@@ -208,7 +209,13 @@ def control(args):
             unique_id_to_coordinates,
             handle)
     print('Coordinates calculated.....Pickle file dumped.....')
-
+    '''
+    with open(
+        args.IMAGE_DIR + '/meta_file/unique_id_to_coord.pkl',
+        'rb') as handle:
+        unique_id_to_coordinates = pickle.load(
+            handle)
+    kernel_size = (args.kernel_size, args.kernel_size)
     # Extract cells from fluorescent image using the
     # above coordinates and write each extracted patch
     # to respective folder
@@ -269,7 +276,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--slack',
         type=int,
-        default=20,
+        default=10,
         help='allowance while cropping')
 
     args = parser.parse_args()
