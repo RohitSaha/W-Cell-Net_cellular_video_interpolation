@@ -51,7 +51,7 @@ def conv_batchnorm_relu(input_var, layer_name,
         update_collection=False,
         is_training=True,
         use_batch_norm=False,
-        initializer=tf.keras.initializers.glorot_normal):
+        initializer=tf.random_normal_initializer):
 
     shape = input_var.get_shape().as_list()
     in_channels = shape[-1]

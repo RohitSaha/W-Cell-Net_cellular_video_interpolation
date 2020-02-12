@@ -1,6 +1,8 @@
 import os
 import pickle
+import numpy as np
 import argparse
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 import tensorflow as tf
 
@@ -8,28 +10,46 @@ from data_pipeline.read_record import read_and_decode
 from models.utils.optimizer import get_optimizer
 from models import bipn
 
+
+def count_parameters():
+   return np.sum(
+        [np.prod(
+            v.get_shape().as_list())
+            for v in tf.trainable_variables()]) 
+
 def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
-
+    ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    TRAIN_REC_DIR = os.path.join(
+        ROOT_DIR,
+        args.experiment_name,
+        'train.tfrecords')
+    VAL_REC_DIR = os.path.join(
+        ROOT_DIR,
+        args.experiment_name,
+        'val.tfrecords')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
         global_step = tf.train.get_global_step()
 
         train_queue = tf.train.string_input_producer(
-            [args.TRAIN_REC_DIR], num_epochs=None)
-        train_fFrames, train_lFrames, train_iFrames = read_and_decode(
-            filename_queue=train_queue,
-            is_traning=True)
+            [TRAIN_REC_DIR], num_epochs=None)
+        train_fFrames, train_lFrames, train_iFrames, train_mfn =\
+            read_and_decode(
+                filename_queue=train_queue,
+                is_training=True)
 
         val_queue = tf.train.string_input_producer(
-            [args.VAL_REC_DIR], num_epochs=None)
-        val_fFrames, val_lFrames, val_iFrames = read_and_decode(
-            filename_queue=val_queue,
-            is_training=False)
+            [VAL_REC_DIR], num_epochs=None)
+        val_fFrames, val_lFrames, val_iFrames, val_mfn = \
+            read_and_decode(
+                filename_queue=val_queue,
+                is_training=False)
 
         with tf.variable_scope('bipn'):
+            print('TRAIN FRAMES:')
             train_rec_iFrames = bipn.build_bipn(
                 train_fFrames,
                 train_lFrames,
@@ -37,12 +57,16 @@ def training(args):
                 is_training=True)
 
         with tf.variable_scope('bipn', reuse=tf.AUTO_REUSE):
+            print('VAL FRAMES:')
             val_rec_iFrames = bipn.build_bipn(
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,
                 is_training=False)
             
+        print('Model parameters:{}'.format(
+            count_parameters()))
+
         # DEFINE METRICS
 
 
@@ -68,6 +92,12 @@ def training(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='params of running the experiment')
+
+    parser.add_argument(
+        '--experiment_name',
+        type=str,
+        default='slack_20px_fluorescent_window_5',
+        help='to mention the experiment folder in tf_records')
 
     parser.add_argument(
         '--optim_id',
