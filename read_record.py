@@ -78,7 +78,7 @@ def read_and_decode(filename_queue=[], is_training=False,
     fFrame = fFrame / 127.5 - 1.
     lFrame = lFrame / 127.5 - 1.
     iFrame = iFrame / 127.5 - 1.
-
+    
     if is_training:
         fFrames, lFrames, iFrames, mfn = tf.train.shuffle_batch(
             [fFrame, lFrame, iFrame, meta_file_names],
@@ -115,7 +115,7 @@ def unit_test():
             [final_path], num_epochs=None)
         fFrames, lFrames, iFrames, mfns = read_and_decode(
             filename_queue=train_queue,
-            is_training=False)
+            is_training=True)
 
         init_op = tf.group(
             tf.global_variables_initializer(),
@@ -146,4 +146,4 @@ def unit_test():
 
         coord.request_stop()
 
-# unit_test()
+unit_test()
