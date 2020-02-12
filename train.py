@@ -4,8 +4,10 @@ import argparse
 
 import tensorflow as tf
 
-from data_pipeline import read_record
+from data_pipeline.read_record import read_and_decode
 from models import bipn
 
 def training():
     print('hello')
+
+training()

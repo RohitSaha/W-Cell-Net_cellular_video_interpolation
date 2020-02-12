@@ -1,7 +1,5 @@
 import tensorflow as tf
 
-import cross_replica_batch_norm
-import tpu_normalization
 #TODO: 1.maxpool3d, averagepool2d/3d
 
 def linear(input_var, layer_name, output_units,
@@ -53,8 +51,6 @@ def conv_batchnorm_relu(input_var, layer_name,
         update_collection=False,
         is_training=True,
         use_batch_norm=False,
-        use_cross_replica_batch_norm=False,
-        num_cores=8,
         initializer=tf.keras.initializers.glorot_normal):
 
     shape = input_var.get_shape().as_list()
@@ -99,21 +95,12 @@ def conv_batchnorm_relu(input_var, layer_name,
                 name=conv_name)
 
         if use_batch_norm:
-            if use_cross_replica_batch_norm:
-                conv = tpu_normalization.cross_replica_batch_normalization(
-                    conv,
-                    axis=-1,
-                    center=True,
-                    scale=True,
-                    training=is_training,
-                    num_distributed_groups=1)
-            else:
-                conv = tf.layers.batch_normalization(
-                    conv,
-                    scale=True,
-                    center=True,
-                    training=is_training,
-                    name='batch_norm')
+            conv = tf.layers.batch_normalization(
+                conv,
+                scale=True,
+                center=True,
+                training=is_training,
+                name='batch_norm')
 
         else:
             bias_var = tf.get_variable(

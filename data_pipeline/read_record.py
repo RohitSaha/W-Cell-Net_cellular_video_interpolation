@@ -1,7 +1,7 @@
 import os
 
 import tensorflow as tf
-import tf_augmentations
+from data_pipeline import tf_augmentations
 
 def read_and_decode(filename_queue=[], is_training=False,
                     batch_size=32, height=100, width=100,
@@ -146,4 +146,4 @@ def unit_test():
 
         coord.request_stop()
 
-unit_test()
+# unit_test()
