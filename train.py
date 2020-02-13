@@ -5,6 +5,7 @@ import argparse
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 import tensorflow as tf
+from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
 from models.utils.optimizer import get_optimizer
@@ -16,28 +17,32 @@ def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
     ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
-    TRAIN_REC_DIR = os.path.join(
+    TRAIN_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
         'train.tfrecords')
-    VAL_REC_DIR = os.path.join(
+    VAL_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
         'val.tfrecords')
+    CKPT_PATH = os.path.join(
+        ROOT_DIR,
+        args.experiment_name,
+        'runs/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
         global_step = tf.train.get_global_step()
 
         train_queue = tf.train.string_input_producer(
-            [TRAIN_REC_DIR], num_epochs=None)
+            [TRAIN_REC_PATH], num_epochs=None)
         train_fFrames, train_lFrames, train_iFrames, train_mfn =\
             read_and_decode(
                 filename_queue=train_queue,
                 is_training=True)
 
         val_queue = tf.train.string_input_producer(
-            [VAL_REC_DIR], num_epochs=None)
+            [VAL_REC_PATH], num_epochs=None)
         val_fFrames, val_lFrames, val_iFrames, val_mfn = \
             read_and_decode(
                 filename_queue=val_queue,
@@ -63,17 +68,33 @@ def training(args):
             count_parameters()))
 
         # DEFINE METRICS
+        train_reconstruction = train_iFrames - train_rec_iFrames
+        train_l2_loss = tf.nn.l2_loss(
+            train_reconstruction)
+        val_reconstruction = val_iFrames - val_rec_iFrames
+        val_l2_loss = tf.nn.l2_loss(
+            val_reconstruction)
 
+        # SUMMARIES
+        tf.summary.scalar('train_l2_loss', train_l2_loss)
+        tf.summary.scalar('val_l2_loss', val_l2_loss)
+        # PROJECT IMAGES as well?
+        merged = tf.summary.merge_all()
+        train_writer = tf.summary.FileWriter(
+            CKPT_PATH,
+            sess.graph)
 
         # DEFINE OPTIMIZER
         optimizer = get_optimizer(
             train_loss,
             optim_id=args.optim_id,
-            learning_rate=args.learning_rate)
+            learning_rate=args.learning_rate,
+            use_batch_norm=True)
 
         init_op = tf.group(
             tf.global_variables_initializer(),
             tf.local_variables_initializer())
+        saver = tf.train.Saver()
 
         sess.run(init_op)
 
