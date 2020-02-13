@@ -86,7 +86,7 @@ def training(args):
 
         # DEFINE OPTIMIZER
         optimizer = get_optimizer(
-            train_loss,
+            train_l2_loss,
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
             use_batch_norm=True)
@@ -102,6 +102,7 @@ def training(args):
         threads = tf.train.start_queue_runners(
             coord=coord)
 
+        # TODO: error in training loop
         # START TRAINING HERE
         try:
             for iteration in range(args.train_iter):
