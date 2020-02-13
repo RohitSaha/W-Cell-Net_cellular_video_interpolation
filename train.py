@@ -81,7 +81,7 @@ def training(args):
         # PROJECT IMAGES as well?
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
-            CKPT_PATH,
+            CKPT_PATH + 'train',
             sess.graph)
 
         # DEFINE OPTIMIZER
@@ -103,12 +103,55 @@ def training(args):
             coord=coord)
 
         # START TRAINING HERE
+        try:
+            for iteration in range(args.train_iter):
+                _, t_summary, train_loss = sess.run(
+                    [train_op, merged, train_l2_loss])
+                train_writer.add_summary(t_summary, i)
+                print('Iter:{}, Train Loss:{}'.format(
+                    iteration,
+                    train_loss))
+
+                if iteration % args.val_every == 0:
+                    val_loss = sess.run(val_l2_loss)
+                    print('Iter:{}, Val Loss:{}'.format(
+                        iteration,
+                        val_loss))
+
+                if iteration % args.save_every == 0:
+                    saver.save(
+                        sess,
+                        CKPT_PATH + 'iter:{}_val:{}'.format(
+                            str(iteration),
+                            str(round(val_loss, 3))))
+
+            coord.join(threads)
+
+        except Exception as e:
+            coord.request_stop(e)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='params of running the experiment')
 
+    parser.add_argument(
+        '--train_iter',
+        type=int,
+        default=10000,
+        help='Mention the number of training iterations')
+
+    parser.add_argument(
+        '--val_every',
+        type=int,
+        default=100,
+        help='Number of iterations after which validation is done')
+
+    parser.add_argument(
+        '--save_every',
+        type=int,
+        default=50,
+        help='Number of iterations after which model is saved')
     parser.add_argument(
         '--experiment_name',
         type=str,
