@@ -8,14 +8,9 @@ import tensorflow as tf
 
 from data_pipeline.read_record import read_and_decode
 from models.utils.optimizer import get_optimizer
+from models.utils.optimizer import count_parameters
 from models import bipn
 
-
-def count_parameters():
-   return np.sum(
-        [np.prod(
-            v.get_shape().as_list())
-            for v in tf.trainable_variables()]) 
 
 def training(args):
     
@@ -49,7 +44,7 @@ def training(args):
                 is_training=False)
 
         with tf.variable_scope('bipn'):
-            print('TRAIN FRAMES:')
+            print('TRAIN FRAMES (first):')
             train_rec_iFrames = bipn.build_bipn(
                 train_fFrames,
                 train_lFrames,
@@ -57,7 +52,7 @@ def training(args):
                 is_training=True)
 
         with tf.variable_scope('bipn', reuse=tf.AUTO_REUSE):
-            print('VAL FRAMES:')
+            print('VAL FRAMES (first):')
             val_rec_iFrames = bipn.build_bipn(
                 val_fFrames,
                 val_lFrames,

@@ -34,75 +34,147 @@ def conv_block(inputs, block_name='block_1',
  
 
 def encoder(inputs, use_batch_norm=False,
-            is_training=False):
+            is_training=False, is_verbose=False):
+
+    layer_dict = {}
 
     get_shape = inputs.get_shape().as_list()
-    print('Inputs:{}'.format(get_shape))
+    if is_verbose: print('Inputs:{}'.format(get_shape))
 
-    net = conv_block(
+    encode_1 = conv_block(
         inputs, block_name='block_1',
         out_channels=16, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
-    net = MxP(
-        net,
+    encode_1 = MxP(
+        encode_1,
         'MxP_1',
         [1, 2, 2, 1],
         [1, 2, 2, 1],
         padding='SAME')
-    print('Encode_1:{}'.format(net))
+    if is_verbose: print('Encode_1:{}'.format(encode_1))
+    layer_dict['encode_1'] = encode_1
 
-    net = conv_block(
-        net, block_name='block_2',
+    encode_2 = conv_block(
+        encode_1, block_name='block_2',
         out_channels=32, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
-    net = MxP(
-        net,
+    encode_2 = MxP(
+        encode_2,
         'MxP_2',
         [1, 2, 2, 1],
         [1, 2, 2, 1],
         padding='SAME')
-    print('Encode_2:{}'.format(net))
+    if is_verbose: print('Encode_2:{}'.format(encode_2))
+    layer_dict['encode_2'] = encode_2
 
-    net = conv_block(
-        net, block_name='block_3',
+    encode_3 = conv_block(
+        encode_2, block_name='block_3',
         out_channels=64, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
-    net = MxP(
-        net,
+    encode_3 = MxP(
+        encode_3,
         'MxP_3',
         [1, 2, 2, 1],
         [1, 2, 2, 1],
-        padding='SAME')
-    print('Encode_3:{}'.format(net))
+        padding='VALID')
+    if is_verbose: print('Encode_3:{}'.format(encode_3))
+    layer_dict['encode_3'] = encode_3
 
-    net = conv_block(
-        net, block_name='block_4',
+    encode_4 = conv_block(
+        encode_3, block_name='block_4',
         out_channels=128, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
-    net = MxP(
-        net,
+    encode_4 = MxP(
+        encode_4,
         'MxP_4',
         [1, 2, 2, 1],
         [1, 2, 2, 1],
         padding='SAME')
-    print('Encode_4:{}',format(net))
+    if is_verbose: print('Encode_4:{}',format(encode_4))
+    layer_dict['encode_4'] = encode_4
+
+    return encode_4
+
+def upconv_block(inputs, block_name='block_1',
+                use_batch_norm=False,
+                kernel_size=3, stride=1, use_bias=False,
+                out_channels=16, is_training=False):
+
+    # upconv(x2, c/2) --> 2 convs
+    
+    with tf.variable_scope(block_name):
+        net = UC(inputs, 'up_conv', out_channels,
+            kernel_size=(2, 2), strides=(2, 2),
+            use_bias=use_bias)
+
+        if block_name == 'block_2':
+            # BILINEAR RESIZE
+            net = tf.image.resize_images(
+                net, (25, 25),
+                align_corners=True)
+
+        for i in range(2):
+            net = CBR(
+                net, 'conv_{}'.format(str(i)), out_channels,
+                activation=tf.keras.activations.relu,
+                kernel_size=kernel_size, stride=stride,
+                is_training=is_training,
+                use_batch_norm=use_batch_norm)
 
     return net
 
 
 def decoder(inputs, use_batch_norm=False,
-            is_training=False):
+            out_channels=16, n_IF=3,
+            is_training=False, is_verbose=False):
 
     get_shape = inputs.get_shape().as_list()
-    return inputs
+
+    decode_1 = upconv_block(
+        inputs,
+        block_name='block_1',
+        use_batch_norm=True,
+        kernel_size=3, stride=1,
+        out_channels=256,
+        use_bias=True)
+    if is_verbose: print('Decode_1:{}'.format(decode_1))
+
+    decode_2 = upconv_block(
+        decode_1,
+        block_name='block_2',
+        use_batch_norm=True,
+        kernel_size=3, stride=1,
+        out_channels=128,
+        use_bias=True)
+    if is_verbose: print('Decode_2:{}'.format(decode_2))
+
+    decode_3 = upconv_block(
+        decode_2,
+        block_name='block_3',
+        use_batch_norm=True,
+        kernel_size=3, stride=1,
+        out_channels=64,
+        use_bias=True)
+    if is_verbose: print('Decode_3:{}'.format(decode_3))
+
+    decode_4 = upconv_block(
+        decode_3,
+        block_name='block_4',
+        use_batch_norm=True,
+        kernel_size=3, stride=1,
+        out_channels=n_IF,
+        use_bias=True)
+    if is_verbose: print('Decode_4:{}'.format(decode_4))
+               
+    return decode_4
 
 
 def build_bipn(fFrames, lFrames, use_batch_norm=False,
@@ -112,14 +184,16 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
         encode_fFrames = encoder(
             fFrames,
             use_batch_norm=use_batch_norm,
-            is_training=is_training)
+            is_training=is_training,
+            is_verbose=True)
 
     # use same encoder weights for last frame
     with tf.variable_scope('encoder', reuse=tf.AUTO_REUSE):
         encode_lFrames = encoder(
             lFrames,
             use_batch_norm=use_batch_norm,
-            is_training=is_training)
+            is_training=is_training,
+            is_verbose=False)
 
     # Flip :encode_lFrames
     # not too confident about tf.reverse behavior
@@ -134,12 +208,19 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
     print('Concatenated:{}'.format(
         encode_Frames.get_shape().as_list()))
 
-    return encode_Frames
-
     with tf.variable_scope('decoder'):
         rec_iFrames = decoder(
             encode_Frames,
             use_batch_norm=use_batch_norm,
-            is_training=is_training)
+            is_training=is_training,
+            is_verbose=True)
 
-    return rec_iFrames 
+    rec_iFrames = tf.transpose(
+        rec_iFrames,
+        [0, 3, 1, 2])
+    rec_iFrames = tf.expand_dims(
+        rec_iFrames,
+        axis=-1)
+    print('Final decoder:{}'.format(rec_iFrames))
+
+    return rec_iFrames
