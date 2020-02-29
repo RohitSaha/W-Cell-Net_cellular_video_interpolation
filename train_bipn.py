@@ -73,18 +73,19 @@ def training(args):
             count_parameters()))
 
         # DEFINE METRICS
-        ''' 
-        train_loss = huber_loss(
-            train_iFrames, train_rec_iFrames,
-            delta=1.)
-        val_loss = huber_loss(
-            val_iFrames, val_rec_iFrames,
-            delta=1.)
-        '''
-        train_loss = l2_loss(
-            train_iFrames, train_rec_iFrames)
-        val_loss = l2_loss(
-            val_iFrames, val_rec_iFrames) 
+        if args.loss_id == 0:
+            train_loss = huber_loss(
+                train_iFrames, train_rec_iFrames,
+                delta=1.)
+            val_loss = huber_loss(
+                val_iFrames, val_rec_iFrames,
+                delta=1.)
+
+        elif args.loss_id == 1:
+            train_loss = l2_loss(
+                train_iFrames, train_rec_iFrames)
+            val_loss = l2_loss(
+                val_iFrames, val_rec_iFrames) 
         
         # SUMMARIES
         tf.summary.scalar('train_loss', train_loss)
@@ -116,15 +117,16 @@ def training(args):
         # TODO: error in training loop
         # START TRAINING HERE
         try:
-            for iteration in range(args.train_iter):
+            for iteration in range(args.train_iters):
                 _, t_summ, t_loss, tr_f, tr_l = sess.run(
                     [optimizer, merged, train_loss,\
                         train_fFrames, train_lFrames])
 
 
                 train_writer.add_summary(t_summ, iteration)
-                print('Iter:{}, Train Loss:{}'.format(
+                print('Iter:{}/{}, Train Loss:{}'.format(
                     iteration,
+                    args.train_iters,
                     t_loss))
 
                 if iteration % args.val_every == 0:
@@ -151,9 +153,9 @@ if __name__ == '__main__':
         description='params of running the experiment')
 
     parser.add_argument(
-        '--train_iter',
+        '--train_iters',
         type=int,
-        default=10000,
+        default=15000,
         help='Mention the number of training iterations')
 
     parser.add_argument(
@@ -165,7 +167,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--save_every',
         type=int,
-        default=50,
+        default=100,
         help='Number of iterations after which model is saved')
 
     parser.add_argument(
@@ -191,6 +193,12 @@ if __name__ == '__main__':
         type=int,
         default=32,
         help='To mention the number of samples in a batch')
+
+    parser.add_argument(
+        '--loss_id',
+        type=int,
+        default=0,
+        help='0:huber, 1:l2')
 
     args = parser.parse_args()
 
