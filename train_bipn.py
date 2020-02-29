@@ -5,11 +5,14 @@ import argparse
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 import tensorflow as tf
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
 from models.utils.optimizer import get_optimizer
 from models.utils.optimizer import count_parameters
+from models.utils.losses import huber_loss
+from models.utils.losses import l2_loss
 from models import bipn
 
 
@@ -28,7 +31,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'runs/')
+        'l2_adam_1e-3/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -70,16 +73,22 @@ def training(args):
             count_parameters()))
 
         # DEFINE METRICS
-        train_reconstruction = train_iFrames - train_rec_iFrames
-        train_l2_loss = tf.nn.l2_loss(
-            train_reconstruction)
-        val_reconstruction = val_iFrames - val_rec_iFrames
-        val_l2_loss = tf.nn.l2_loss(
-            val_reconstruction)
-
+        ''' 
+        train_loss = huber_loss(
+            train_iFrames, train_rec_iFrames,
+            delta=1.)
+        val_loss = huber_loss(
+            val_iFrames, val_rec_iFrames,
+            delta=1.)
+        '''
+        train_loss = l2_loss(
+            train_iFrames, train_rec_iFrames)
+        val_loss = l2_loss(
+            val_iFrames, val_rec_iFrames) 
+        
         # SUMMARIES
-        tf.summary.scalar('train_l2_loss', train_l2_loss)
-        tf.summary.scalar('val_l2_loss', val_l2_loss)
+        tf.summary.scalar('train_loss', train_loss)
+        tf.summary.scalar('val_loss', val_loss)
         # PROJECT IMAGES as well?
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
@@ -88,7 +97,7 @@ def training(args):
 
         # DEFINE OPTIMIZER
         optimizer = get_optimizer(
-            train_l2_loss,
+            train_loss,
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
             use_batch_norm=True)
@@ -108,28 +117,28 @@ def training(args):
         # START TRAINING HERE
         try:
             for iteration in range(args.train_iter):
-                _, t_summ, train_loss, tr_f, tr_l = sess.run(
-                    [optimizer, merged, train_l2_loss,\
+                _, t_summ, t_loss, tr_f, tr_l = sess.run(
+                    [optimizer, merged, train_loss,\
                         train_fFrames, train_lFrames])
 
 
-                # train_writer.add_summary(t_summ, iteration)
+                train_writer.add_summary(t_summ, iteration)
                 print('Iter:{}, Train Loss:{}'.format(
                     iteration,
-                    train_loss))
+                    t_loss))
 
                 if iteration % args.val_every == 0:
-                    val_loss = sess.run(val_l2_loss)
+                    v_loss = sess.run(val_loss)
                     print('Iter:{}, Val Loss:{}'.format(
                         iteration,
-                        val_loss))
+                        v_loss))
 
                 if iteration % args.save_every == 0:
                     saver.save(
                         sess,
                         CKPT_PATH + 'iter:{}_val:{}'.format(
                             str(iteration),
-                            str(round(val_loss, 3))))
+                            str(round(v_loss, 3))))
 
             coord.join(threads)
 
