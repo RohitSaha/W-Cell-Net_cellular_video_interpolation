@@ -39,14 +39,16 @@ def training(args):
         train_fFrames, train_lFrames, train_iFrames, train_mfn =\
             read_and_decode(
                 filename_queue=train_queue,
-                is_training=True)
+                is_training=True,
+                batch_size=args.batch_size)
 
         val_queue = tf.train.string_input_producer(
             [VAL_REC_PATH], num_epochs=None)
         val_fFrames, val_lFrames, val_iFrames, val_mfn = \
             read_and_decode(
                 filename_queue=val_queue,
-                is_training=False)
+                is_training=False,
+                batch_size=args.batch_size)
 
         with tf.variable_scope('bipn'):
             print('TRAIN FRAMES (first):')
@@ -106,9 +108,12 @@ def training(args):
         # START TRAINING HERE
         try:
             for iteration in range(args.train_iter):
-                _, t_summary, train_loss = sess.run(
-                    [train_op, merged, train_l2_loss])
-                train_writer.add_summary(t_summary, i)
+                _, t_summ, train_loss, tr_f, tr_l = sess.run(
+                    [optimizer, merged, train_l2_loss,\
+                        train_fFrames, train_lFrames])
+
+
+                # train_writer.add_summary(t_summ, iteration)
                 print('Iter:{}, Train Loss:{}'.format(
                     iteration,
                     train_loss))
@@ -153,6 +158,7 @@ if __name__ == '__main__':
         type=int,
         default=50,
         help='Number of iterations after which model is saved')
+
     parser.add_argument(
         '--experiment_name',
         type=str,
@@ -162,14 +168,20 @@ if __name__ == '__main__':
     parser.add_argument(
         '--optim_id',
         type=int,
-        default=1,
-        help='ID to specify the learning rate to be used')
+        default=2,
+        help='1. adam, 2. SGD + momentum')
 
     parser.add_argument(
         '--learning_rate',
         type=float,
         default=1e-3,
         help='To mention the starting learning rate')
+
+    parser.add_argument(
+        '--batch_size',
+        type=int,
+        default=32,
+        help='To mention the number of samples in a batch')
 
     args = parser.parse_args()
 

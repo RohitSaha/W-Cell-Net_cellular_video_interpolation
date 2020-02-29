@@ -43,7 +43,7 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_1 = conv_block(
         inputs, block_name='block_1',
-        out_channels=16, kernel_size=3,
+        out_channels=8, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -58,7 +58,7 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_2 = conv_block(
         encode_1, block_name='block_2',
-        out_channels=32, kernel_size=3,
+        out_channels=16, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -73,7 +73,7 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_3 = conv_block(
         encode_2, block_name='block_3',
-        out_channels=64, kernel_size=3,
+        out_channels=32, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -88,7 +88,7 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_4 = conv_block(
         encode_3, block_name='block_4',
-        out_channels=128, kernel_size=3,
+        out_channels=64, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -98,7 +98,7 @@ def encoder(inputs, use_batch_norm=False,
         [1, 2, 2, 1],
         [1, 2, 2, 1],
         padding='SAME')
-    if is_verbose: print('Encode_4:{}',format(encode_4))
+    if is_verbose: print('Encode_4:{}'.format(encode_4))
     layer_dict['encode_4'] = encode_4
 
     return encode_4
@@ -121,10 +121,10 @@ def upconv_block(inputs, block_name='block_1',
                 net, (25, 25),
                 align_corners=True)
 
-        for i in range(2):
+        for i in range(1): 
             net = CBR(
                 net, 'conv_{}'.format(str(i)), out_channels,
-                activation=tf.keras.activations.relu,
+                activation=tf.keras.activations.tanh,
                 kernel_size=kernel_size, stride=stride,
                 is_training=is_training,
                 use_batch_norm=use_batch_norm)
@@ -143,7 +143,7 @@ def decoder(inputs, use_batch_norm=False,
         block_name='block_1',
         use_batch_norm=True,
         kernel_size=3, stride=1,
-        out_channels=256,
+        out_channels=128,
         use_bias=True)
     if is_verbose: print('Decode_1:{}'.format(decode_1))
 
@@ -152,7 +152,7 @@ def decoder(inputs, use_batch_norm=False,
         block_name='block_2',
         use_batch_norm=True,
         kernel_size=3, stride=1,
-        out_channels=128,
+        out_channels=64,
         use_bias=True)
     if is_verbose: print('Decode_2:{}'.format(decode_2))
 
@@ -161,7 +161,7 @@ def decoder(inputs, use_batch_norm=False,
         block_name='block_3',
         use_batch_norm=True,
         kernel_size=3, stride=1,
-        out_channels=64,
+        out_channels=32,
         use_bias=True)
     if is_verbose: print('Decode_3:{}'.format(decode_3))
 

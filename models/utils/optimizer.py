@@ -8,6 +8,11 @@ def get_optimizer(train_loss, optim_id=1,
     if optim_id == 1:
         optimizer = tf.train.AdamOptimizer(
             learning_rate=learning_rate)
+    elif optim_id == 2:
+        optimizer = tf.train.MomentumOptimizer(
+            learning_rate=learning_rate,
+            momentum=0.9,
+            use_nesterov=True)
 
     if use_batch_norm:
         update_ops = tf.get_collection(
