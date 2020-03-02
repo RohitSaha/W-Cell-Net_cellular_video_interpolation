@@ -13,6 +13,7 @@ from models.utils.optimizer import get_optimizer
 from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
+from models.utils.visualizer import visualize_frames
 from models import bipn
 
 
@@ -31,7 +32,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'l2_adam_1e-3/')
+        'demo/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -114,38 +115,49 @@ def training(args):
         threads = tf.train.start_queue_runners(
             coord=coord)
 
-        # TODO: error in training loop
         # START TRAINING HERE
-        try:
-            for iteration in range(args.train_iters):
-                _, t_summ, t_loss, tr_f, tr_l = sess.run(
-                    [optimizer, merged, train_loss,\
-                        train_fFrames, train_lFrames])
+        #try:
+        for iteration in range(args.train_iters):
+            _, t_summ, t_loss = sess.run(
+                [optimizer, merged, train_loss])
 
+            train_writer.add_summary(t_summ, iteration)
+            print('Iter:{}/{}, Train Loss:{}'.format(
+                iteration,
+                args.train_iters,
+                t_loss))
 
-                train_writer.add_summary(t_summ, iteration)
-                print('Iter:{}/{}, Train Loss:{}'.format(
+            if iteration % args.val_every == 0:
+                v_loss = sess.run(val_loss)
+                print('Iter:{}, Val Loss:{}'.format(
                     iteration,
-                    args.train_iters,
-                    t_loss))
+                    v_loss))
 
-                if iteration % args.val_every == 0:
-                    v_loss = sess.run(val_loss)
-                    print('Iter:{}, Val Loss:{}'.format(
-                        iteration,
-                        v_loss))
+            if iteration % args.save_every == 0:
+                saver.save(
+                    sess,
+                    CKPT_PATH + 'iter:{}_val:{}'.format(
+                        str(iteration),
+                        str(round(v_loss, 3))))
 
-                if iteration % args.save_every == 0:
-                    saver.save(
-                        sess,
-                        CKPT_PATH + 'iter:{}_val:{}'.format(
-                            str(iteration),
-                            str(round(v_loss, 3))))
+            if iteration % args.plot_every == 0:
+                start_frames, end_frames, mid_frames,\
+                    rec_mid_frames = sess.run(
+                        [train_fFrames, train_lFrames,\
+                            train_iFrames,\
+                            train_rec_iFrames])
 
-            coord.join(threads)
+                visualize_frames(
+                    start_frames,
+                    end_frames,
+                    mid_frames,
+                    rec_mid_frames,
+                    iteration=iteration)
 
-        except Exception as e:
-            coord.request_stop(e)
+        coord.join(threads)
+
+        #except Exception as e:
+        #    coord.request_stop(e)
 
 
 if __name__ == '__main__':
@@ -169,6 +181,12 @@ if __name__ == '__main__':
         type=int,
         default=100,
         help='Number of iterations after which model is saved')
+
+    parser.add_argument(
+        '--plot_every',
+        type=int,
+        default=1000,
+        help='Nu,ber of iterations after which plots will be saved')
 
     parser.add_argument(
         '--experiment_name',
