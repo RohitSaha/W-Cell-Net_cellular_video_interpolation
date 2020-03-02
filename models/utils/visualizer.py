@@ -4,7 +4,7 @@ import numpy as np
 
 def visualize_frames(start_frames, end_frames,
                     mid_frames, rec_mid_frames,
-                    iteration=100,
+                    iteration=100, save_path='',
                     training = False, num_plots = 3):
     '''
     Args
@@ -87,12 +87,13 @@ def visualize_frames(start_frames, end_frames,
     filename = ['validation','training'][training]\
         +'_iteration_'\
         +str(iteration)+'.png' 
-    plt.savefig(filename)
+
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+
+    plt.savefig(save_path + filename)
 
     return
-
-
-
 
 
 
