@@ -157,8 +157,6 @@ def training(args):
                             CKPT_PATH,
                             'plots/'))
 
-            coord.join(threads)
-
         except Exception as e:
             coord.request_stop(e)
 

@@ -33,7 +33,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'demo/')
+        'separate_bipn_huber_adam_1e-3/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -57,7 +57,7 @@ def training(args):
 
         with tf.variable_scope('separate_bipn'):
             print('TRAIN FRAMES (first):')
-            train_rec_iFrames = separate_bipn.build_bipn(
+            train_rec_iFrames = separate_encoder_bipn.build_bipn(
                 train_fFrames,
                 train_lFrames,
                 use_batch_norm=True,
@@ -65,7 +65,7 @@ def training(args):
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
-            val_rec_iFrames = separate_bipn.build_bipn(
+            val_rec_iFrames = separate_encoder_bipn.build_bipn(
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,
