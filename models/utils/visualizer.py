@@ -10,10 +10,17 @@ def visualize_frames(start_frames, end_frames,
                     training = False, num_plots = 3):
     '''
     Args
-        iteration: current iteration on training or validation
-        every: integer that enables plots to be generated when iteration % every == 0 
-        training : determins which frames need to be run in tf.session
-        num_plots : integer to indicate the number of samples to plot
+    	start_frames: (batch_size X height X width X 1 )
+    	end_frames: (batch_size X height X width X 1)
+    	mid_frames: ground truth intermediate frames
+    				(batch_size X # inter_frames X 
+    				height X width X 1)
+    	rec_mid_frames: generated intermediate frames
+    				(batch_size X # inter_frames X 
+    				height X width X 1)
+        iteration: current train or validation iteration
+        training : plot train or valid frames
+        num_plots: number of samples to plot
     '''
     num_samples = np.minimum(
         num_plots,
@@ -53,11 +60,14 @@ def visualize_frames(start_frames, end_frames,
 
         axes[row, col].axis("off")
         
+        
         if even_row:
+        	# row 1, 3 ... don't show start and end frames
             axes[row,col].text(.5,.5,'Generated')
             axes[row, num_cols-1].axis("off")
             axes[row,num_cols-1].text(0,.5,'Frames')
         else:
+        	# row 0, 2 ... show start and end frames 
             axes[row, col].imshow(
                 start_images[idx],
                 cmap="gray",
@@ -71,13 +81,15 @@ def visualize_frames(start_frames, end_frames,
         for col in range (1,num_cols-1):
             axes[row, col].axis("off")
             if even_row:
+            	# row 1, 3 ... show generated frames
                 axes[row, col].imshow(
-                    true_mid_images[idx,col-1],
+                    gen_mid_images[idx,col-1],
                     cmap="gray",
                     aspect="auto")
             else:
+            	# row 0, 2 ... show true frames
                 axes[row, col].imshow(
-                    gen_mid_images[idx,col-1],
+                    true_mid_images[idx,col-1],
                     cmap="gray",
                     aspect="auto")
 
