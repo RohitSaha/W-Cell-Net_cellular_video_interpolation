@@ -13,6 +13,7 @@ from models.utils.optimizer import get_optimizer
 from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
+from models.utils.losses import ridge_weight_decay
 from models.utils.visualizer import visualize_frames
 
 from models import bipn
@@ -89,7 +90,12 @@ def training(args):
                 train_iFrames, train_rec_iFrames)
             val_loss = l2_loss(
                 val_iFrames, val_rec_iFrames) 
-        
+
+        if args.weight_decay:
+            decay_loss = ridge_weight_decay(
+                tf.trainable_parameters())
+            train_loss += args.weight_decay * decay_loss
+
         # SUMMARIES
         tf.summary.scalar('train_loss', train_loss)
         tf.summary.scalar('val_loss', val_loss)

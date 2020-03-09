@@ -18,3 +18,15 @@ def l2_loss(prediction, ground_truth):
         prediction - ground_truth)
 
     return loss
+
+
+def ridge_weight_decay(parameters):
+
+    weight_decay = tf.add_n(
+        [
+            tf.nn.l2_loss(param)
+            for param in parameters
+            if 'w:' in param.name \
+            or 'kernel:' in param.name])
+    
+    return weight_decay
