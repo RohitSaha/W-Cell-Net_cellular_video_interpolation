@@ -229,6 +229,12 @@ if __name__ == '__main__':
         default=0,
         help='0:huber, 1:l2')
 
+    params.add_argument(
+        '--weight_decay',
+        type=float,
+        default=0.01,
+        help='To mention the strength of L2 weight decay')
+
     args = parser.parse_args()
 
     training(args)
