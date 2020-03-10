@@ -179,5 +179,5 @@ def visualize_tensorboard(start_frames, end_frames,
         sampled_rec_frames, sampled_end_frames],\
         axis = 2)
 
-    return (true_images,fake_images)
+    return (127.5*(true_images+1.),127.5*(fake_images+1.))
 
