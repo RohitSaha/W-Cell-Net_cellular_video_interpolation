@@ -36,7 +36,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'skip_separate_bipn_l2_adam_1e-3/')
+        'skip_merge_conv_tanh_separate_bipn_wd_l2_adam_1e-3/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -94,7 +94,7 @@ def training(args):
 
         if args.weight_decay:
             decay_loss = ridge_weight_decay(
-                tf.trainable_parameters())
+                tf.trainable_variables())
             train_loss += args.weight_decay * decay_loss
 
         # SUMMARIES
@@ -209,7 +209,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--optim_id',
         type=int,
-        default=2,
+        default=1,
         help='1. adam, 2. SGD + momentum')
 
     parser.add_argument(
@@ -227,10 +227,10 @@ if __name__ == '__main__':
     parser.add_argument(
         '--loss_id',
         type=int,
-        default=0,
+        default=1,
         help='0:huber, 1:l2')
 
-    params.add_argument(
+    parser.add_argument(
         '--weight_decay',
         type=float,
         default=0.01,
