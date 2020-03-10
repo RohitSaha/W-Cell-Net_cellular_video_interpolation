@@ -15,6 +15,7 @@ from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
 from models.utils.losses import ridge_weight_decay
 from models.utils.visualizer import visualize_frames
+from models.utils.visualizer import visualize_tensorboard
 
 from models import bipn
 from models import separate_encoder_bipn
@@ -36,7 +37,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'skip_merge_conv_tanh_separate_bipn_wd_l2_adam_1e-3/')
+        'skip_merge_conv_summary_image_tanh_separate_bipn_wd_l2_adam_1e-3/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -100,7 +101,23 @@ def training(args):
         # SUMMARIES
         tf.summary.scalar('train_loss', train_loss)
         tf.summary.scalar('val_loss', val_loss)
-        # PROJECT IMAGES as well?
+
+        with tf.contrib.summary.\
+            record_summaries_every_n_global_steps(
+                n=args.summary_image_every):
+            '''
+            summary_true, summary_fake = visualize_tensorboard(
+                train_fFrames,
+                train_lFrames,
+                train_iFrames,
+                train_rec_iFrames,
+                num_plots=3)
+            '''
+            summary_true = train_iFrames[0, ...]
+            summary_fake = train_rec_iFrames[0, ...]
+            tf.summary.image('true frames', summary_true)
+            tf.summary.image('fake frames', summary_fake)
+
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
             CKPT_PATH + 'train',
@@ -149,6 +166,7 @@ def training(args):
                             str(iteration),
                             str(round(v_loss, 3))))
 
+                '''
                 if iteration % args.plot_every == 0:
                     start_frames, end_frames, mid_frames,\
                         rec_mid_frames = sess.run(
@@ -165,6 +183,7 @@ def training(args):
                         save_path=os.path.join(
                             CKPT_PATH,
                             'plots/'))
+                '''
 
             coord.join(threads)
 
@@ -198,7 +217,13 @@ if __name__ == '__main__':
         '--plot_every',
         type=int,
         default=1000,
-        help='Nu,ber of iterations after which plots will be saved')
+        help='Number of iterations after which plots will be saved')
+
+    parser.add_argument(
+        '--summary_image_every',
+        type=int,
+        default=500,
+        help='Number of iterations after which images will get pushed to tensorboard')
 
     parser.add_argument(
         '--experiment_name',
