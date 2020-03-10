@@ -109,5 +109,78 @@ def visualize_frames(start_frames, end_frames,
 
     return
 
+def visualize_tensorboard(start_frames, end_frames,
+    mid_frames, rec_mid_frames, num_plots = 3):
+    
+    '''
+    Args
+        start_frames: (batch_size X height X width X 1 )
+        end_frames: (batch_size X height X width X 1)
+        mid_frames: ground truth intermediate frames
+                    (batch_size X # inter_frames X 
+                    height X width X 1)
+        rec_mid_frames: generated intermediate frames
+                    (batch_size X # inter_frames X 
+                    height X width X 1)
+        num_plots: number of samples to plot
+
+    return:
+        true_images: (1 X num_plots* height X 
+                    (#inter_frames+2) * width, 1 )
+        fake_images: (1 X num_plots* height X 
+                    (#inter_frames+2) * width, 1 )
+
+    '''
+
+    # Get original shape of end and mid frames
+    input_shape = start_frames.shape
+    mid_shape = mid_frames.shape
+
+    # smallest of num_plots and batch_size
+    num_samples = np.minimum(
+        num_plots,
+        mid_shape[0])
+
+    # Final output image shapes 
+    #   (1,batch_size * h,w,1)
+    start_frame_new_shape = [1,\
+        num_samples*input_shape[1],\
+        input_shape[2],1]
+    #   (1,batch_size * h,#inter_frames * w,1)
+    mid_frame_new_shape = [1,\
+        num_samples*mid_shape[2],\
+        mid_shape[1]*mid_shape[3], 1]
+    
+    # subsample and reshape
+    sampled_start_frames = \
+        start_frames[0:num_samples].\
+        reshape(start_frame_new_shape)
+    sampled_end_frames = \
+        end_frames[0:num_samples].\
+        reshape(start_frame_new_shape)
+
+    # subsample, concatenate, and then reshape
+    sampled_mid_frames = \
+        tf.reshape(tf.concat([mid_frames\
+            [0:num_samples,[i],:,:]\
+            for i in range(mid_shape[1])],axis=3),\
+        mid_frame_new_shape)
+    sampled_rec_frames = \
+        tf.reshape(tf.concat([rec_mid_frames\
+            [0:num_samples,[i],:,:]\
+            for i in range(mid_shape[1])],axis=3),\
+        mid_frame_new_shape)
+
+    # concatenate to form 
+    #   (1, batch_size*h, (2+#inter_frames)*w, 1)
+    true_images = tf.concat([sampled_start_frames,\
+        sampled_mid_frames, sampled_end_frames],\
+        axis = 2)
+    fake_images = tf.concat([sampled_start_frames,\
+        sampled_rec_frames, sampled_end_frames],\
+        axis = 2)
+
+    return (true_images,fake_images)
+
 
 
