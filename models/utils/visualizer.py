@@ -172,7 +172,7 @@ def visualize_tensorboard(start_frames, end_frames,
         mid_frame_new_shape)
 
     # concatenate to form 
-    #   (1, batch_size*h, (2+#inter_frames)*w, 1)
+    #   (1,batch_size*h,(2+#inter_frames)*w,1)
     true_images = tf.concat([sampled_start_frames,\
         sampled_mid_frames, sampled_end_frames],\
         axis = 2)
