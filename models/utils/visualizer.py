@@ -2,7 +2,7 @@ import tensorflow as tf
 
 import os
 import matplotlib.pyplot as plt
-import numpy as np
+#import numpy as np
 
 def visualize_frames(start_frames, end_frames,
                     mid_frames, rec_mid_frames,
@@ -133,13 +133,12 @@ def visualize_tensorboard(start_frames, end_frames,
     '''
 
     # Get original shape of end and mid frames
-    input_shape = start_frames.shape
-    mid_shape = mid_frames.shape
+    input_shape = start_frames.get_shape().as_list()
+    mid_shape = mid_frames.get_shape().as_list()
 
     # smallest of num_plots and batch_size
-    num_samples = np.minimum(
-        num_plots,
-        mid_shape[0])
+    num_samples = tf.math.minimum(\
+   		num_plots,mid_shape[0])
 
     # Final output image shapes 
     #   (1,batch_size * h,w,1)
@@ -153,21 +152,21 @@ def visualize_tensorboard(start_frames, end_frames,
     
     # subsample and reshape
     sampled_start_frames = \
-        start_frames[0:num_samples].\
-        reshape(start_frame_new_shape)
+        tf.reshape(start_frames[0:num_samples],\
+        start_frame_new_shape)
     sampled_end_frames = \
-        end_frames[0:num_samples].\
-        reshape(start_frame_new_shape)
+        tf.reshape(end_frames[0:num_samples],\
+        start_frame_new_shape)
 
     # subsample, concatenate, and then reshape
     sampled_mid_frames = \
         tf.reshape(tf.concat([mid_frames\
-            [0:num_samples,[i],:,:]\
+            [0:num_samples,i:i+1,:,:]\
             for i in range(mid_shape[1])],axis=3),\
         mid_frame_new_shape)
     sampled_rec_frames = \
         tf.reshape(tf.concat([rec_mid_frames\
-            [0:num_samples,[i],:,:]\
+            [0:num_samples,i:i+1,:,:]\
             for i in range(mid_shape[1])],axis=3),\
         mid_frame_new_shape)
 
@@ -181,6 +180,4 @@ def visualize_tensorboard(start_frames, end_frames,
         axis = 2)
 
     return (true_images,fake_images)
-
-
 
