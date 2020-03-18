@@ -74,7 +74,7 @@ def training(args):
             
         print('Model parameters:{}'.format(
             count_parameters()))
-        # Weights should be kept locally ~500 MB
+        # Weights should be kept locally ~ 500 MB space
         with tf.variable_scope('vgg16'):
             imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
             vgg = vgg16(imgs, 'vgg16_weights.npz', sess)

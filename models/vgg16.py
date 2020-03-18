@@ -12,6 +12,7 @@ import tensorflow as tf
 import numpy as np
 
 
+
 class vgg16:
     def __init__(self, imgs, weights=None, sess=None):
         self.imgs = imgs
