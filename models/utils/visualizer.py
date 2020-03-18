@@ -178,6 +178,18 @@ def visualize_tensorboard(start_frames, end_frames,
     fake_images = tf.concat([sampled_start_frames,\
         sampled_rec_frames, sampled_end_frames],\
         axis = 2)
+    
+    img_min = tf.math.reduce_min(true_images)
+    img_max = tf.math.reduce_max(true_images)
+    fk_img_min = tf.math.reduce_min(fake_images)
+    fk_img_max = tf.math.reduce_max(fake_images)
+    
+    fk_img_range = fk_img_max - fk_img_min
+    img_range = img_max - img_min
 
-    return (127.5*(true_images+1.),127.5*(fake_images+1.))
+    true_images_scaled = 255 * \
+        (true_images - img_min) / img_range
+    fake_images_scaled = 255 * \
+        (fake_images - fk_img_min)/ fk_img_range
 
+    return (true_images_scaled,fake_images_scaled)
