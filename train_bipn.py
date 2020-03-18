@@ -76,9 +76,14 @@ def training(args):
             count_parameters()))
         # Weights should be kept locally ~ 500 MB space
         with tf.variable_scope('vgg16'):
-            imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
-            vgg = vgg16(imgs, 'vgg16_weights.npz', sess)
-            vgg.trainable = False
+            # imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
+            # vgg = vgg16(imgs, 'vgg16_weights.npz', sess)
+            # vgg.trainable = False
+            train_iFrames_features = vgg16.build_vgg16(
+                train_iFrames, end_point='block_2')
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            train_rec_iFrames_features = vgg16.build_vgg16(
+                train_rec_iFrames, end_point='block_2')
 
         # DEFINE METRICS
         if args.loss_id == 0:
