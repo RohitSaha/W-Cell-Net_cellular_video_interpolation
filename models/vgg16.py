@@ -33,8 +33,8 @@ class vgg16:
 
         # conv1_1
         with tf.name_scope('conv1_1') as scope:
-	    kernel = tf.get_variable(
-		    'weights', initializer=dict['key'],
+	    kernel = tf.compat.v1.get_variable(
+		    'weights', initializer=weights['key'], key corresponds to the layer name of this conv layer
 		    dtype=tf.float32, trainable=False)
 	
             kernel = tf.Variable(tf.truncated_normal([3, 3, 3, 64], dtype=tf.float32,
