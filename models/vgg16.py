@@ -14,8 +14,9 @@ import numpy as np
 
 
 class vgg16:
-    def __init__(self, imgs, weights=None, sess=None):
+    def __init__(self, imgs, weights=None, sess=None, end_point=''):
         self.imgs = imgs
+	self.end_point = end_point
         self.convlayers()
         self.fc_layers()
         self.probs = tf.nn.softmax(self.fc3l)
@@ -45,6 +46,9 @@ class vgg16:
             out = tf.nn.bias_add(conv, biases)
             self.conv1_1 = tf.nn.relu(out, name=scope)
             self.parameters += [kernel, biases]
+
+	if self.end_point == 'conv1_1':
+	    return self.conv1_1
 
         # conv1_2
         with tf.name_scope('conv1_2') as scope:
