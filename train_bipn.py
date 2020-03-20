@@ -76,14 +76,17 @@ def training(args):
             count_parameters()))
         # Weights should be kept locally ~ 500 MB space
         with tf.variable_scope('vgg16'):
-            # imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
-            # vgg = vgg16(imgs, 'vgg16_weights.npz', sess)
-            # vgg.trainable = False
-            train_iFrames_features = vgg16.build_vgg16(
-                train_iFrames, end_point='block_2')
+            train_iFrames_features = vgg16(
+                train_iFrames, end_point='conv4_3')
         with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
-            train_rec_iFrames_features = vgg16.build_vgg16(
-                train_rec_iFrames, end_point='block_2')
+            train_rec_iFrames_features = vgg16(
+                train_rec_iFrames, end_point='conv4_3')
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            val_iFrames_features = vgg16(
+                val_iFrames, end_point='conv4_3')
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            val_rec_iFrames_features = vgg16(
+                val_rec_iFrames, end_point='conv4_3')
 
         # DEFINE METRICS
         if args.loss_id == 0:
@@ -101,10 +104,10 @@ def training(args):
                 val_iFrames, val_rec_iFrames)
 
         elif args.loss_id == 2:
-            train_loss = perceptual_loss(train_iFrames,\
-                train_rec_iFrames,vgg,sess)
-            val_loss = perceptual_loss(train_iFrames,\
-                train_rec_iFrames,vgg,sess)
+            train_loss = l2_loss(train_iFrames_features,\
+                train_rec_iFrames_features)
+            val_loss = l2_loss(val_iFrames_features,\
+                val_rec_iFrames_features)
 
         
         # SUMMARIES
