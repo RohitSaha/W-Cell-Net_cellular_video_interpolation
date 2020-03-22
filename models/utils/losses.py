@@ -1,7 +1,5 @@
 import tensorflow as tf
 
-
-
 def huber_loss(prediction, ground_truth,
                 delta=1.0):
 
@@ -53,3 +51,10 @@ def ssim_loss(prediction, ground_truth, max_val=2.,
         k2=k2)
 
     return ssim_loss
+
+def perceptual_loss(prediction, ground_truth):
+
+    perceptual_loss = tf.nn.l2_loss(
+        prediction - ground_truth)
+
+    return perceptual_loss

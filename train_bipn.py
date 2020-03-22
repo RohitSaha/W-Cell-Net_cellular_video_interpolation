@@ -18,6 +18,7 @@ from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
 from models.utils.losses import perceptual_loss
 from models.utils.visualizer import visualize_frames
+
 from models import bipn
 from models import vgg16
 
@@ -84,16 +85,12 @@ def training(args):
             # Weights should be kept locally ~ 500 MB space
             with tf.variable_scope('vgg16'):
                 train_iFrames_features = vgg16(
-                    train_iFrames, end_point='conv4_3')
+                    train_iFrames,
+                    end_point='conv4_3')
             with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
                 train_rec_iFrames_features = vgg16(
-                    train_rec_iFrames, end_point='conv4_3')
-            with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
-                val_iFrames_features = vgg16(
-                    val_iFrames, end_point='conv4_3')
-            with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
-                val_rec_iFrames_features = vgg16(
-                    val_rec_iFrames, end_point='conv4_3')
+                    train_rec_iFrames,
+                    end_point='conv4_3')
 
         # DEFINE METRICS
         if args.loss_id == 0:
@@ -111,28 +108,23 @@ def training(args):
                 val_iFrames, val_rec_iFrames)
 
         total_train_loss = train_loss
-        total_val_loss = val_loss
         tf.summary.scalar('train_l2_loss', train_loss)
-        tf.summary.scalar('val_l2_loss', val_loss)
+        tf.summary.scalar('total_val_l2_loss', val_loss)
 
        if args.perceptual_loss_weight: 
-            train_perceptual_loss = l2_loss(train_iFrames_features,\
+            train_perceptual_loss = perceptual_loss(
+                train_iFrames_features,
                 train_rec_iFrames_features)
-            val_perceptual_loss = l2_loss(val_iFrames_features,\
-                val_rec_iFrames_features)
 
             tf.summary.scalar('train_perceptual_loss',\
                 train_perceptual_loss)
-            tf.summary.scalar('val_perceptual_loss',\
-                val_perceptual_loss)
 
-            total_train_loss += args.perceptual_loss_weight\
-                * train_perceptual_loss
-            total_val_loss += val_perceptual_loss
+            total_train_loss += train_perceptual_loss\
+                * args.perceptual_loss_weight
 
         # SUMMARIES
-        tf.summary.scalar('total_train_loss', total_train_loss)
-        tf.summary.scalar('total_val_loss', total_val_loss)
+        tf.summary.scalar('total_train_loss',\
+            total_train_loss)
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
             CKPT_PATH + 'train',
@@ -169,7 +161,7 @@ def training(args):
                     t_loss))
 
                 if iteration % args.val_every == 0:
-                    v_loss = sess.run(total_val_loss)
+                    v_loss = sess.run(val_loss)
                     print('Iter:{}, Val Loss:{}'.format(
                         iteration,
                         v_loss))

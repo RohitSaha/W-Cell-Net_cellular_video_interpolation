@@ -2,7 +2,10 @@ import os
 import pickle
 import numpy as np
 import argparse
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '01'
+
+import warnings
+warnings.filterwarnings("ignore")
 
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -14,11 +17,13 @@ from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
 from models.utils.losses import ridge_weight_decay
+from models.utils.losses import perceptual_loss
 from models.utils.visualizer import visualize_frames
 
 from models import bipn
 from models import separate_encoder_bipn
 from models import skip_separate_encoder_bipn
+from models import vgg16
 
 def training(args):
     
@@ -82,10 +87,12 @@ def training(args):
             # Weights should be kept locally ~ 500 MB space
             with tf.variable_scope('vgg16'):
                 train_iFrames_features = vgg16(
-                    train_iFrames, end_point='conv4_3')
+                    train_iFrames,
+                    end_point='conv4_3')
             with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
                 train_rec_iFrames_features = vgg16(
-                    train_rec_iFrames, end_point='conv4_3')
+                    train_rec_iFrames,
+                    end_point='conv4_3')
 
         # DEFINE METRICS
         if args.loss_id == 0:
@@ -107,15 +114,15 @@ def training(args):
         tf.summary.scalar('total_val_l2_loss', val_loss)
 
         if args.perceptual_loss_weight:
-            train_perceptual_loss = l2_loss(
+            train_perceptual_loss = perceptual_loss(
                 train_iFrames_features,
                 train_rec_iFrames_features)
 
             tf.summary_scalar('train_perceptual_loss',\
                 train_perceptual_loss)
 
-            total_train_loss += args.perceptual_loss_weight\
-                * train_perceptual_loss
+            total_train_loss += train_perceptual_loss\
+                * args.perceptual_loss_weight
 
         if args.weight_decay:
             decay_loss = ridge_weight_decay(
@@ -124,10 +131,12 @@ def training(args):
             tf.summary.scalar('ridge_l2_weight_decay',\
                 decay_loss)
 
-            total_train_loss += args.weight_decay * decay_loss
+            total_train_loss += decay_loss\
+                * args.weight_decay 
 
-        tf.summary.scalar('total_train_loss', total_train_loss)
-        # PROJECT IMAGES as well?
+        # SUMMARIES
+        tf.summary.scalar('total_train_loss',\
+            total_train_loss)
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
             CKPT_PATH + 'train',
