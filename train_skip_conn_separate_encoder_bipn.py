@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 import argparse
-os.environ['CUDA_VISIBLE_DEVICES'] = '01'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -70,7 +70,8 @@ def training(args):
                 train_fFrames,
                 train_lFrames,
                 use_batch_norm=True,
-                is_training=True)
+                is_training=True,
+                starting_out_channels=args.starting_out_channels)
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
@@ -78,7 +79,8 @@ def training(args):
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,
-                is_training=False)
+                is_training=False,
+                starting_out_channels=args.starting_out_channels)
             
         print('Model parameters:{}'.format(
             count_parameters()))
@@ -290,6 +292,12 @@ if __name__ == '__main__':
         default='bipn',
         help='Mentions name of model to be run')
 
+    parser.add_argument(
+        '--starting_out_channels',
+        type=int,
+        default=8,
+        help='Specify the number of out channels for the first conv')
+
     args = parser.parse_args()
 
     if args.optimizer == 'adam': args.optim_id = 1
@@ -299,14 +307,16 @@ if __name__ == '__main__':
     elif args.loss == 'l2': args.loss_id = 1
 
     # ckpt_folder_name: model-name_iters_batch_size_\
-    # optimizer_lr_main-loss_additional-losses_loss-reg
-    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}'.format(
+    # optimizer_lr_main-loss_starting-out-channels_\
+    # additional-losses_loss-reg
+    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_startOutChannels-{}'.format(
         args.model_name,
         str(args.train_iters),
         str(args.batch_size),
         args.optimizer,
         str(args.learning_rate),
-        args.loss)
+        args.loss,
+        str(args.starting_out_channels))
 
     if args.perceptual_loss_weight:
         args.ckpt_folder_name += '_perceptualLoss-{}-{}'.format(

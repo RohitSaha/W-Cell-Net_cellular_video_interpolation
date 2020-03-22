@@ -34,7 +34,8 @@ def conv_block(inputs, block_name='block_1',
  
 
 def encoder(inputs, use_batch_norm=False,
-            is_training=False, is_verbose=False):
+            is_training=False, is_verbose=False,
+            starting_out_channels=8):
 
     layer_dict = {}
 
@@ -43,7 +44,8 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_1 = conv_block(
         inputs, block_name='block_1',
-        out_channels=8, kernel_size=3,
+        out_channels=starting_out_channels,
+        kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -58,7 +60,8 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_2 = conv_block(
         encode_1, block_name='block_2',
-        out_channels=16, kernel_size=3,
+        out_channels=2*starting_out_channels,
+        kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -73,7 +76,8 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_3 = conv_block(
         encode_2, block_name='block_3',
-        out_channels=32, kernel_size=3,
+        out_channels=4*starting_out_channels,
+        kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -88,7 +92,8 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_4 = conv_block(
         encode_3, block_name='block_4',
-        out_channels=64, kernel_size=3,
+        out_channels=8*starting_out_channels,
+        kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -221,14 +226,15 @@ def decoder(inputs, layer_dict_fFrames,
 
 
 def build_bipn(fFrames, lFrames, use_batch_norm=False,
-                is_training=False):
+                is_training=False, starting_out_channels=8):
 
     with tf.variable_scope('encoder_1'):
         encode_fFrames, layer_dict_fFrames = encoder(
             fFrames,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=True)
+            is_verbose=True,
+            starting_out_channels=starting_out_channels)
 
     # use same encoder weights for last frame
     with tf.variable_scope('encoder_2'):
@@ -236,7 +242,8 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
             lFrames,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=False)
+            is_verbose=False,
+            starting_out_channels=starting_out_channels)
 
     # Flip :encode_lFrames
     # not too confident about tf.reverse behavior
@@ -251,6 +258,7 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
     print('Concatenated:{}'.format(
         encode_Frames.get_shape().as_list()))
 
+    import ipdb; ipdb.set_trace()
     with tf.variable_scope('decoder'):
         rec_iFrames = decoder(
             encode_Frames,
