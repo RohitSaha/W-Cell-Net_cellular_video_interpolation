@@ -161,51 +161,47 @@ def training(args):
             coord=coord)
 
         # START TRAINING HERE
-        try:
-            for iteration in range(args.train_iters):
-                _, t_summ, t_loss = sess.run(
-                    [optimizer, merged, total_train_loss])
+        for iteration in range(args.train_iters):
+            _, t_summ, t_loss = sess.run(
+                [optimizer, merged, total_train_loss])
 
-                train_writer.add_summary(t_summ, iteration)
-                print('Iter:{}/{}, Train Loss:{}'.format(
+            train_writer.add_summary(t_summ, iteration)
+            print('Iter:{}/{}, Train Loss:{}'.format(
+                iteration,
+                args.train_iters,
+                t_loss))
+
+            if iteration % args.val_every == 0:
+                v_loss = sess.run(val_loss)
+                print('Iter:{}, Val Loss:{}'.format(
                     iteration,
-                    args.train_iters,
-                    t_loss))
+                    v_loss))
 
-                if iteration % args.val_every == 0:
-                    v_loss = sess.run(val_loss)
-                    print('Iter:{}, Val Loss:{}'.format(
-                        iteration,
-                        v_loss))
+            if iteration % args.save_every == 0:
+                saver.save(
+                    sess,
+                    CKPT_PATH + 'iter:{}_val:{}'.format(
+                        str(iteration),
+                        str(round(v_loss, 3))))
 
-                if iteration % args.save_every == 0:
-                    saver.save(
-                        sess,
-                        CKPT_PATH + 'iter:{}_val:{}'.format(
-                            str(iteration),
-                            str(round(v_loss, 3))))
+            if iteration % args.plot_every == 0:
+                start_frames, end_frames, mid_frames,\
+                    rec_mid_frames = sess.run(
+                        [train_fFrames, train_lFrames,\
+                            train_iFrames,\
+                            train_rec_iFrames])
 
-                if iteration % args.plot_every == 0:
-                    start_frames, end_frames, mid_frames,\
-                        rec_mid_frames = sess.run(
-                            [train_fFrames, train_lFrames,\
-                                train_iFrames,\
-                                train_rec_iFrames])
+                visualize_frames(
+                    start_frames,
+                    end_frames,
+                    mid_frames,
+                    rec_mid_frames,
+                    iteration=iteration,
+                    save_path=os.path.join(
+                        CKPT_PATH,
+                        'plots/'))
 
-                    visualize_frames(
-                        start_frames,
-                        end_frames,
-                        mid_frames,
-                        rec_mid_frames,
-                        iteration=iteration,
-                        save_path=os.path.join(
-                            CKPT_PATH,
-                            'plots/'))
-
-            coord.join(threads)
-
-        except Exception as e:
-            coord.request_stop(e)
+        print('Training complete.....')
 
 
 if __name__ == '__main__':
