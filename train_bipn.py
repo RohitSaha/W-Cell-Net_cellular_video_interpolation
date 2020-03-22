@@ -35,7 +35,6 @@ def training(args):
         ROOT_DIR,
         args.experiment_name,
         'val.tfrecords')
-    
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
