@@ -16,8 +16,10 @@ from models.utils.optimizer import get_optimizer
 from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
+from models.utils.losses import perceptual_loss
 from models.utils.visualizer import visualize_frames
 from models import bipn
+from models import vgg16
 
 
 def training(args):
@@ -76,6 +78,19 @@ def training(args):
             
         print('Model parameters:{}'.format(
             count_parameters()))
+        # Weights should be kept locally ~ 500 MB space
+        with tf.variable_scope('vgg16'):
+            train_iFrames_features = vgg16(
+                train_iFrames, end_point='conv4_3')
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            train_rec_iFrames_features = vgg16(
+                train_rec_iFrames, end_point='conv4_3')
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            val_iFrames_features = vgg16(
+                val_iFrames, end_point='conv4_3')
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            val_rec_iFrames_features = vgg16(
+                val_rec_iFrames, end_point='conv4_3')
 
         # DEFINE METRICS
         if args.loss_id == 0:
@@ -90,7 +105,14 @@ def training(args):
             train_loss = l2_loss(
                 train_iFrames, train_rec_iFrames)
             val_loss = l2_loss(
-                val_iFrames, val_rec_iFrames) 
+                val_iFrames, val_rec_iFrames)
+
+        elif args.loss_id == 2:
+            train_loss = l2_loss(train_iFrames_features,\
+                train_rec_iFrames_features)
+            val_loss = l2_loss(val_iFrames_features,\
+                val_rec_iFrames_features)
+
         
         # SUMMARIES
         tf.summary.scalar('train_loss', train_loss)
