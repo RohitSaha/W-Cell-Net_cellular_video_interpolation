@@ -139,17 +139,18 @@ def upconv_block(inputs, block_name='block_1',
 
 def decoder(inputs, layer_dict_fFrames,
             layer_dict_lFrames, use_batch_norm=False,
-            out_channels=16, n_IF=3,
-            is_training=False, is_verbose=False):
+            n_IF=3, is_training=False,
+            is_verbose=False):
 
     get_shape = inputs.get_shape().as_list()
+    out_channels = get_shape[-1]
 
     decode_1 = upconv_block(
         inputs,
         block_name='block_1',
         use_batch_norm=True,
         kernel_size=3, stride=1,
-        out_channels=128,
+        out_channels=out_channels//2,
         use_bias=True)
     if is_verbose: print('Decode_1:{}'.format(decode_1))
 
@@ -167,12 +168,15 @@ def decoder(inputs, layer_dict_fFrames,
     if is_verbose: print('MergeDecode_1:{}'.format(decode_1))
     # decode_1 channels: 256
     
+    get_shape = decode_1.get_shape().as_list()
+    out_channels = get_shape[-1]
+
     decode_2 = upconv_block(
         decode_1,
         block_name='block_2',
         use_batch_norm=True,
         kernel_size=3, stride=1,
-        out_channels=128,
+        out_channels=out_channels//2,
         use_bias=True)
     if is_verbose: print('Decode_2:{}'.format(decode_2))
 
@@ -258,7 +262,6 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
     print('Concatenated:{}'.format(
         encode_Frames.get_shape().as_list()))
 
-    import ipdb; ipdb.set_trace()
     with tf.variable_scope('decoder'):
         rec_iFrames = decoder(
             encode_Frames,

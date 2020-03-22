@@ -2,7 +2,6 @@ import os
 import pickle
 import numpy as np
 import argparse
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -29,7 +28,7 @@ def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
     # ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
-    ROOT_DIR + '/media/data/movie/dataset/tf_records'
+    ROOT_DIR = '/media/data/movie/dataset/tf_records'
     TRAIN_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
@@ -41,8 +40,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        args.ckpt_folder_name,
-        '/')
+        args.ckpt_folder_name + '/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -128,7 +126,7 @@ def training(args):
 
         if args.weight_decay:
             decay_loss = ridge_weight_decay(
-                tf.trainable_parameters())
+                tf.trainable_variables())
 
             tf.summary.scalar('ridge_l2_weight_decay',\
                 decay_loss)
@@ -268,7 +266,7 @@ if __name__ == '__main__':
         default='l2',
         help='0:huber, 1:l2')
 
-    params.add_argument(
+    parser.add_argument(
         '--weight_decay',
         type=float,
         default=0.01,
@@ -276,8 +274,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--perceptual_loss_weight',
-        type=int,
-        default=1,
+        type=float,
+        default=1.0,
         help='Mention strength of perceptual loss')
 
     parser.add_argument(
@@ -286,7 +284,7 @@ if __name__ == '__main__':
         default='conv4_3',
         help='Mentions the layer from which features are to be extracted')
 
-    parser.add_agument(
+    parser.add_argument(
         '--model_name',
         type=str,
         default='bipn',
@@ -297,6 +295,12 @@ if __name__ == '__main__':
         type=int,
         default=8,
         help='Specify the number of out channels for the first conv')
+
+    parser.add_argument(
+        '--debug',
+        type=int,
+        default=1,
+        help='Specifies whether to run the script in DEBUG mode')
 
     args = parser.parse_args()
 
@@ -326,6 +330,9 @@ if __name__ == '__main__':
     if args.weight_decay:
         args.ckpt_folder_name += '_ridgeWeightDecay-{}'.format(
             str(args.weight_decay))
+
+    if args.debug:
+        args.ckpt_folder_name = 'demo'
 
     training(args)
 
