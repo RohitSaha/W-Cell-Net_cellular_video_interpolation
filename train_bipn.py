@@ -2,10 +2,13 @@ import os
 import pickle
 import numpy as np
 import argparse
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+import warnings
+warnings.filterwarnings("ignore")
 
 import tensorflow as tf
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.WARN)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
@@ -20,7 +23,8 @@ from models import bipn
 def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
-    ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    # ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    ROOT_DIR = '/media/data/movie/dataset/tf_records'
     TRAIN_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
