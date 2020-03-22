@@ -1,7 +1,8 @@
 #source /home/moseslab/.bashrc
 CUDA_VISIBLE_DEVICES=0
-python train_skip_conn_separate_encoder_bipn.py --train_iters 1000 \
-    --save_every 100 \
+python train_skip_conn_separate_encoder_bipn.py --train_iters 50000 \
+    --val_every 100 \
+    --save_every 1000 \
     --plot_every 1000 \
     --experiment_name 'slack_20px_fluorescent_window_5' \
     --optimizer 'adam' \
@@ -13,4 +14,4 @@ python train_skip_conn_separate_encoder_bipn.py --train_iters 1000 \
     --perceptual_loss_endpoint 'conv4_3' \
     --model_name 'skip_conn_separate_encoder_bipn' \
     --starting_out_channels 8 \
-    --debug 1 
+    --debug 0 
