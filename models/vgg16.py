@@ -10,7 +10,7 @@
 
 import tensorflow as tf
 import numpy as np
-
+import os
 
 
 class vgg16:
@@ -405,7 +405,12 @@ class vgg16:
             self.parameters += [fc3w, fc3b]
 
     def load_weights(self, weight_file):
-        self.weights_loaded = np.load(weight_file)
+        path = os.getcwd() + '/models/'
+        self.weights_loaded = np.load(
+            path + weight_file)
+
+def build_vgg16(imgs, end_point='conv4_3', verbose=False):
+    return vgg16(imgs, end_point=end_point, verbose=verbose)
 
 def build_vgg16(imgs, end_point = 'conv4_3',verbose = False):
     return vgg16(imgs, end_point = end_point,verbose = verbose)

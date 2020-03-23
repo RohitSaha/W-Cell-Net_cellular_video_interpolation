@@ -83,10 +83,10 @@ def read_and_decode(filename_queue=[], is_training=False,
         fFrames, lFrames, iFrames, mfn = tf.train.shuffle_batch(
             [fFrame, lFrame, iFrame, meta_file_names],
             batch_size=batch_size,
-            capacity=1000,
-            min_after_dequeue=500,
+            capacity=1000000,
+            min_after_dequeue=10000,
             allow_smaller_final_batch=False,
-            num_threads=2)
+            num_threads=4)
 
     else:
         fFrames, lFrames, iFrames, mfn = tf.train.batch(

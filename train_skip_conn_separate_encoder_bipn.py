@@ -2,7 +2,9 @@ import os
 import pickle
 import numpy as np
 import argparse
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+import warnings
+warnings.filterwarnings("ignore")
 
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -14,16 +16,19 @@ from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
 from models.utils.losses import ridge_weight_decay
+from models.utils.losses import perceptual_loss
 from models.utils.visualizer import visualize_frames
 
 from models import bipn
 from models import separate_encoder_bipn
 from models import skip_separate_encoder_bipn
+from models import vgg16
 
 def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
-    ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    # ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    ROOT_DIR = '/media/data/movie/dataset/tf_records'
     TRAIN_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
@@ -35,7 +40,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'skip_separate_bipn_l2_adam_1e-3/')
+        args.ckpt_folder_name + '/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -63,7 +68,8 @@ def training(args):
                 train_fFrames,
                 train_lFrames,
                 use_batch_norm=True,
-                is_training=True)
+                is_training=True,
+                starting_out_channels=args.starting_out_channels)
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
@@ -71,10 +77,24 @@ def training(args):
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,
-                is_training=False)
+                is_training=False,
+                starting_out_channels=args.starting_out_channels)
             
-        print('Model parameters:{}'.format(
-            count_parameters()))
+        if args.perceptual_loss_weight:
+            # Weights should be kept locally ~ 500 MB space
+            with tf.variable_scope('vgg16'):
+                train_iFrames_features = vgg16.build_vgg16(
+                    train_iFrames,
+                    end_point=args.perceptual_loss_endpoint).features
+            with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+                train_rec_iFrames_features = vgg16.build_vgg16(
+                    train_rec_iFrames,
+                    end_point=args.perceptual_loss_endpoint).features
+
+        print('Global parameters:{}'.format(
+            count_parameters(tf.global_variables())))
+        print('Learnable model parameters:{}'.format(
+            count_parameters(tf.trainable_variables())))
 
         # DEFINE METRICS
         if args.loss_id == 0:
@@ -91,15 +111,34 @@ def training(args):
             val_loss = l2_loss(
                 val_iFrames, val_rec_iFrames) 
 
+        total_train_loss = train_loss
+        tf.summary.scalar('train_l2_loss', train_loss)
+        tf.summary.scalar('total_val_l2_loss', val_loss)
+
+        if args.perceptual_loss_weight:
+            train_perceptual_loss = perceptual_loss(
+                train_iFrames_features,
+                train_rec_iFrames_features)
+
+            tf.summary.scalar('train_perceptual_loss',\
+                train_perceptual_loss)
+
+            total_train_loss += train_perceptual_loss\
+                * args.perceptual_loss_weight
+
         if args.weight_decay:
             decay_loss = ridge_weight_decay(
-                tf.trainable_parameters())
-            train_loss += args.weight_decay * decay_loss
+                tf.trainable_variables())
+
+            tf.summary.scalar('ridge_l2_weight_decay',\
+                decay_loss)
+
+            total_train_loss += decay_loss\
+                * args.weight_decay 
 
         # SUMMARIES
-        tf.summary.scalar('train_loss', train_loss)
-        tf.summary.scalar('val_loss', val_loss)
-        # PROJECT IMAGES as well?
+        tf.summary.scalar('total_train_loss',\
+            total_train_loss)
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
             CKPT_PATH + 'train',
@@ -124,51 +163,65 @@ def training(args):
             coord=coord)
 
         # START TRAINING HERE
-        try:
-            for iteration in range(args.train_iters):
-                _, t_summ, t_loss = sess.run(
-                    [optimizer, merged, train_loss])
+        for iteration in range(args.train_iters):
+            _, t_summ, t_loss = sess.run(
+                [optimizer, merged, total_train_loss])
 
-                train_writer.add_summary(t_summ, iteration)
-                print('Iter:{}/{}, Train Loss:{}'.format(
+            train_writer.add_summary(t_summ, iteration)
+            print('Iter:{}/{}, Train Loss:{}'.format(
+                iteration,
+                args.train_iters,
+                t_loss))
+
+            if iteration % args.val_every == 0:
+                v_loss = sess.run(val_loss)
+                print('Iter:{}, Val Loss:{}'.format(
                     iteration,
-                    args.train_iters,
-                    t_loss))
+                    v_loss))
 
-                if iteration % args.val_every == 0:
-                    v_loss = sess.run(val_loss)
-                    print('Iter:{}, Val Loss:{}'.format(
-                        iteration,
-                        v_loss))
+            if iteration % args.save_every == 0:
+                saver.save(
+                    sess,
+                    CKPT_PATH + 'iter:{}_val:{}'.format(
+                        str(iteration),
+                        str(round(v_loss, 3))))
 
-                if iteration % args.save_every == 0:
-                    saver.save(
-                        sess,
-                        CKPT_PATH + 'iter:{}_val:{}'.format(
-                            str(iteration),
-                            str(round(v_loss, 3))))
+            if iteration % args.plot_every == 0:
+                start_frames, end_frames, mid_frames,\
+                    rec_mid_frames = sess.run(
+                        [train_fFrames, train_lFrames,\
+                            train_iFrames,\
+                            train_rec_iFrames])
 
-                if iteration % args.plot_every == 0:
-                    start_frames, end_frames, mid_frames,\
-                        rec_mid_frames = sess.run(
-                            [train_fFrames, train_lFrames,\
-                                train_iFrames,\
-                                train_rec_iFrames])
+                visualize_frames(
+                    start_frames,
+                    end_frames,
+                    mid_frames,
+                    rec_mid_frames,
+                    training=True,
+                    iteration=iteration,
+                    save_path=os.path.join(
+                        CKPT_PATH,
+                        'train_plots/'))
 
-                    visualize_frames(
-                        start_frames,
-                        end_frames,
-                        mid_frames,
-                        rec_mid_frames,
-                        iteration=iteration,
-                        save_path=os.path.join(
-                            CKPT_PATH,
-                            'plots/'))
+                start_frames, end_frames, mid_frames,\
+                    rec_mid_frames = sess.run(
+                        [val_fFrames, val_lFrames,\
+                            val_iFrames,
+                            val_rec_iFrames])
 
-            coord.join(threads)
+                visualize_frames(
+                    start_frames,
+                    end_frames,
+                    mid_frames,
+                    rec_mid_frames,
+                    training=False,
+                    iteration=iteration,
+                    save_path=os.path.join(
+                        CKPT_PATH,
+                        'validation_plots/'))
 
-        except Exception as e:
-            coord.request_stop(e)
+        print('Training complete.....')
 
 
 if __name__ == '__main__':
@@ -206,9 +259,9 @@ if __name__ == '__main__':
         help='to mention the experiment folder in tf_records')
 
     parser.add_argument(
-        '--optim_id',
-        type=int,
-        default=2,
+        '--optimizer',
+        type=str,
+        default='adam',
         help='1. adam, 2. SGD + momentum')
 
     parser.add_argument(
@@ -224,18 +277,88 @@ if __name__ == '__main__':
         help='To mention the number of samples in a batch')
 
     parser.add_argument(
-        '--loss_id',
-        type=int,
-        default=0,
+        '--loss',
+        type=str,
+        default='l2',
         help='0:huber, 1:l2')
 
-    params.add_argument(
+    parser.add_argument(
         '--weight_decay',
         type=float,
         default=0.01,
         help='To mention the strength of L2 weight decay')
 
+    parser.add_argument(
+        '--perceptual_loss_weight',
+        type=float,
+        default=1.0,
+        help='Mention strength of perceptual loss')
+
+    parser.add_argument(
+        '--perceptual_loss_endpoint',
+        type=str,
+        default='conv4_3',
+        help='Mentions the layer from which features are to be extracted')
+
+    parser.add_argument(
+        '--model_name',
+        type=str,
+        default='bipn',
+        help='Mentions name of model to be run')
+
+    parser.add_argument(
+        '--starting_out_channels',
+        type=int,
+        default=8,
+        help='Specify the number of out channels for the first conv')
+
+    parser.add_argument(
+        '--debug',
+        type=int,
+        default=1,
+        help='Specifies whether to run the script in DEBUG mode')
+
+    parser.add_argument(
+        '--additional_info',
+        type=str,
+        default='',
+        help='Additional details to identify model in dir')
+
     args = parser.parse_args()
+
+    if args.optimizer == 'adam': args.optim_id = 1
+    elif args.optimizer == 'sgd': args.optim_id = 2
+
+    if args.loss == 'huber': args.loss_id = 0
+    elif args.loss == 'l2': args.loss_id = 1
+
+    # ckpt_folder_name: model-name_iters_batch_size_\
+    # optimizer_lr_main-loss_starting-out-channels_\
+    # additional-losses_loss-reg
+    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_startOutChannels-{}'.format(
+        args.model_name,
+        str(args.train_iters),
+        str(args.batch_size),
+        args.optimizer,
+        str(args.learning_rate),
+        args.loss,
+        str(args.starting_out_channels))
+
+    if args.perceptual_loss_weight:
+        args.ckpt_folder_name += '_perceptualLoss-{}-{}'.format(
+            args.perceptual_loss_endpoint,
+            str(args.perceptual_loss_weight))
+
+    if args.weight_decay:
+        args.ckpt_folder_name += '_ridgeWeightDecay-{}'.format(
+            str(args.weight_decay))
+
+    if args.additional_info:
+        args.ckpt_folder_name += '_{}'.format(
+            args.additional_info)
+
+    if args.debug:
+        args.ckpt_folder_name = 'demo'
 
     training(args)
 

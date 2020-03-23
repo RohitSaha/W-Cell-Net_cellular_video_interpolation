@@ -2,12 +2,12 @@ import tensorflow as tf
 
 import os
 import matplotlib.pyplot as plt
-#import numpy as np
+import numpy as np
 
 def visualize_frames(start_frames, end_frames,
                     mid_frames, rec_mid_frames,
                     iteration=100, save_path='',
-                    training = False, num_plots = 3):
+                    training=False, num_plots=3):
     '''
     Args
     	start_frames: (batch_size X height X width X 1 )

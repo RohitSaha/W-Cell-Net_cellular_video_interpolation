@@ -105,16 +105,12 @@ def training(args):
         with tf.contrib.summary.\
             record_summaries_every_n_global_steps(
                 n=args.summary_image_every):
-            '''
             summary_true, summary_fake = visualize_tensorboard(
                 train_fFrames,
                 train_lFrames,
                 train_iFrames,
                 train_rec_iFrames,
                 num_plots=3)
-            '''
-            summary_true = train_iFrames[0, ...]
-            summary_fake = train_rec_iFrames[0, ...]
             tf.summary.image('true frames', summary_true)
             tf.summary.image('fake frames', summary_fake)
 

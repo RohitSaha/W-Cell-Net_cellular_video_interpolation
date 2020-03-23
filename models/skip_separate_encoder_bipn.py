@@ -34,7 +34,8 @@ def conv_block(inputs, block_name='block_1',
  
 
 def encoder(inputs, use_batch_norm=False,
-            is_training=False, is_verbose=False):
+            is_training=False, is_verbose=False,
+            starting_out_channels=8):
 
     layer_dict = {}
 
@@ -43,7 +44,8 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_1 = conv_block(
         inputs, block_name='block_1',
-        out_channels=8, kernel_size=3,
+        out_channels=starting_out_channels,
+        kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -58,7 +60,8 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_2 = conv_block(
         encode_1, block_name='block_2',
-        out_channels=16, kernel_size=3,
+        out_channels=2*starting_out_channels,
+        kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -73,7 +76,8 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_3 = conv_block(
         encode_2, block_name='block_3',
-        out_channels=32, kernel_size=3,
+        out_channels=4*starting_out_channels,
+        kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -88,7 +92,8 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_4 = conv_block(
         encode_3, block_name='block_4',
-        out_channels=64, kernel_size=3,
+        out_channels=8*starting_out_channels,
+        kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -134,17 +139,18 @@ def upconv_block(inputs, block_name='block_1',
 
 def decoder(inputs, layer_dict_fFrames,
             layer_dict_lFrames, use_batch_norm=False,
-            out_channels=16, n_IF=3,
-            is_training=False, is_verbose=False):
+            n_IF=3, is_training=False,
+            is_verbose=False):
 
     get_shape = inputs.get_shape().as_list()
+    out_channels = get_shape[-1]
 
     decode_1 = upconv_block(
         inputs,
         block_name='block_1',
         use_batch_norm=True,
         kernel_size=3, stride=1,
-        out_channels=128,
+        out_channels=out_channels//2,
         use_bias=True)
     if is_verbose: print('Decode_1:{}'.format(decode_1))
 
@@ -162,12 +168,15 @@ def decoder(inputs, layer_dict_fFrames,
     if is_verbose: print('MergeDecode_1:{}'.format(decode_1))
     # decode_1 channels: 256
     
+    get_shape = decode_1.get_shape().as_list()
+    out_channels = get_shape[-1]
+
     decode_2 = upconv_block(
         decode_1,
         block_name='block_2',
         use_batch_norm=True,
         kernel_size=3, stride=1,
-        out_channels=128,
+        out_channels=out_channels//2,
         use_bias=True)
     if is_verbose: print('Decode_2:{}'.format(decode_2))
 
@@ -220,15 +229,16 @@ def decoder(inputs, layer_dict_fFrames,
     return decode_4
 
 
-def build_bipn(fFrames, lFrames, use_batch_norm=False,
-                is_training=False):
+def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
+                is_training=False, starting_out_channels=8):
 
     with tf.variable_scope('encoder_1'):
         encode_fFrames, layer_dict_fFrames = encoder(
             fFrames,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=True)
+            is_verbose=True,
+            starting_out_channels=starting_out_channels)
 
     # use same encoder weights for last frame
     with tf.variable_scope('encoder_2'):
@@ -236,7 +246,8 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
             lFrames,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=False)
+            is_verbose=False,
+            starting_out_channels=starting_out_channels)
 
     # Flip :encode_lFrames
     # not too confident about tf.reverse behavior
@@ -256,9 +267,27 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
             encode_Frames,
             layer_dict_fFrames,
             layer_dict_lFrames,
+            n_IF=n_IF,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
             is_verbose=True)
+
+    # adding skip connection at the input layer
+    rec_iFrames = tf.concat(
+        [fFrames, rec_iFrames, lFrames],
+        axis=-1)
+    get_shape = rec_iFrames.get_shape().as_list()
+    print('Skip connection at input layer:{}'.format(
+        get_shape))
+
+    # 3x3 conv layer to reduce channels to :
+    with tf.variable_scope('final_conv'):
+        rec_iFrames = CBR(
+            rec_iFrames, 'conv_final', n_IF,
+            activation=tf.keras.activations.relu,
+            kernel_size=3, stride=1,
+            is_training=is_training,
+            use_batch_norm=use_batch_norm)
 
     rec_iFrames = tf.transpose(
         rec_iFrames,
@@ -269,3 +298,4 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
     print('Final decoder:{}'.format(rec_iFrames))
 
     return rec_iFrames
+

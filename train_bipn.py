@@ -2,10 +2,13 @@ import os
 import pickle
 import numpy as np
 import argparse
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+import warnings
+warnings.filterwarnings("ignore")
 
 import tensorflow as tf
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.WARN)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
@@ -15,6 +18,7 @@ from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
 from models.utils.losses import perceptual_loss
 from models.utils.visualizer import visualize_frames
+
 from models import bipn
 from models import vgg16
 
@@ -22,7 +26,8 @@ from models import vgg16
 def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
-    ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    # ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    ROOT_DIR = '/media/data/movie/dataset/tf_records'
     TRAIN_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
@@ -34,7 +39,8 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'demo/')
+        args.ckpt_folder_name,
+        '/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -74,6 +80,7 @@ def training(args):
             
         print('Model parameters:{}'.format(
             count_parameters()))
+<<<<<<< HEAD
         # Weights should be kept locally ~ 500 MB space
         with tf.variable_scope('vgg16'):
             train_iFrames_features = vgg16.build_vgg16(
@@ -87,6 +94,19 @@ def training(args):
         with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
             val_rec_iFrames_features = vgg16.build_vgg16(
                 val_rec_iFrames, end_point='conv4_3').features
+=======
+
+        if args.perceptual_loss_weight:
+            # Weights should be kept locally ~ 500 MB space
+            with tf.variable_scope('vgg16'):
+                train_iFrames_features = vgg16(
+                    train_iFrames,
+                    end_point='conv4_3')
+            with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+                train_rec_iFrames_features = vgg16(
+                    train_rec_iFrames,
+                    end_point='conv4_3')
+>>>>>>> 8265dce0293b7d76f6dea7420436864187c1b4f3
 
         # DEFINE METRICS
         if args.loss_id == 0:
@@ -103,17 +123,24 @@ def training(args):
             val_loss = l2_loss(
                 val_iFrames, val_rec_iFrames)
 
-        elif args.loss_id == 2:
-            train_loss = l2_loss(train_iFrames_features,\
-                train_rec_iFrames_features)
-            val_loss = l2_loss(val_iFrames_features,\
-                val_rec_iFrames_features)
+        total_train_loss = train_loss
+        tf.summary.scalar('train_l2_loss', train_loss)
+        tf.summary.scalar('total_val_l2_loss', val_loss)
 
-        
+       if args.perceptual_loss_weight: 
+            train_perceptual_loss = perceptual_loss(
+                train_iFrames_features,
+                train_rec_iFrames_features)
+
+            tf.summary.scalar('train_perceptual_loss',\
+                train_perceptual_loss)
+
+            total_train_loss += train_perceptual_loss\
+                * args.perceptual_loss_weight
+
         # SUMMARIES
-        tf.summary.scalar('train_loss', train_loss)
-        tf.summary.scalar('val_loss', val_loss)
-        # PROJECT IMAGES as well?
+        tf.summary.scalar('total_train_loss',\
+            total_train_loss)
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
             CKPT_PATH + 'train',
@@ -141,7 +168,7 @@ def training(args):
         try:
             for iteration in range(args.train_iters):
                 _, t_summ, t_loss = sess.run(
-                    [optimizer, merged, train_loss])
+                    [optimizer, merged, total_train_loss])
 
                 train_writer.add_summary(t_summ, iteration)
                 print('Iter:{}/{}, Train Loss:{}'.format(
@@ -218,9 +245,9 @@ if __name__ == '__main__':
         help='to mention the experiment folder in tf_records')
 
     parser.add_argument(
-        '--optim_id',
-        type=int,
-        default=2,
+        '--optimizer',
+        type=str,
+        default='adam',
         help='1. adam, 2. SGD + momentum')
 
     parser.add_argument(
@@ -236,12 +263,52 @@ if __name__ == '__main__':
         help='To mention the number of samples in a batch')
 
     parser.add_argument(
-        '--loss_id',
-        type=int,
-        default=0,
+        '--loss',
+        type=str,
+        default='l2',
         help='0:huber, 1:l2')
 
+    parser.add_argument(
+        '--perceptual_loss_weight',
+        type=int,
+        default=1,
+        help='Mention strength of perceptual loss')
+
+    parser.add_argument(
+        '--perceptual_loss_endpoint',
+        type=str,
+        default='conv4_3',
+        help='Mentions the layer from which features are to be extracted')
+
+    parser.add_agument(
+        '--model_name',
+        type=str,
+        default='bipn',
+        help='Mentions name of model to be run')
+
     args = parser.parse_args()
+
+    if args.optimizer == 'adam': args.optim_id = 1
+    elif args.optimizer == 'sgd': args.optim_id = 2
+
+    if args.loss == 'huber': args.loss_id = 0
+    elif args.loss == 'l2': args.loss_id = 1
+
+    # ckpt_folder_name: model-name_iters_batch_size_\
+    # optimizer_lr_main-loss_additional-losses_loss-reg
+    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}'.format(
+        args.model_name,
+        str(args.train_iters),
+        str(args.batch_size),
+        args.optimizer,
+        str(args.learning_rate),
+        args.loss)
+
+    if args.perceptual_loss_weight:
+        args.ckpt_folder_name += '_{}-{}_{}'.format(
+            'perceptualLoss',
+            args.perceptual_loss_endpoint,
+            str(args.perceptual_loss_weight))
 
     training(args)
 
