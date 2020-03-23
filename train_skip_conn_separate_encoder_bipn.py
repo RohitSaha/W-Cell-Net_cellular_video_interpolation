@@ -86,13 +86,13 @@ def training(args):
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
             with tf.variable_scope('vgg16'):
-                train_iFrames_features = vgg16(
+                train_iFrames_features = vgg16.build_vgg16(
                     train_iFrames,
-                    end_point='conv4_3')
+                    end_point='conv4_3').features
             with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
-                train_rec_iFrames_features = vgg16(
+                train_rec_iFrames_features = vgg16.build_vgg16(
                     train_rec_iFrames,
-                    end_point='conv4_3')
+                    end_point='conv4_3').features
 
         # DEFINE METRICS
         if args.loss_id == 0:

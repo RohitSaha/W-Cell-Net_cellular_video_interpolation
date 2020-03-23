@@ -407,8 +407,8 @@ class vgg16:
     def load_weights(self, weight_file):
         self.weights_loaded = np.load(weight_file)
 
-def build_vgg16(imgs, end_point = 'conv4_3',verbose = False):
-    return vgg16(imgs, end_point = end_point,verbose = verbose)
+def build_vgg16(imgs, end_point='conv4_3', verbose=False):
+    return vgg16(imgs, end_point=end_point, verbose=verbose)
 
 # if __name__ == '__main__':
 #     sess = tf.Session()
