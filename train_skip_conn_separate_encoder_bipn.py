@@ -80,9 +80,6 @@ def training(args):
                 is_training=False,
                 starting_out_channels=args.starting_out_channels)
             
-        print('Model parameters:{}'.format(
-            count_parameters()))
-        import ipdb; ipdb.set_trace()
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
             with tf.variable_scope('vgg16'):
@@ -93,6 +90,11 @@ def training(args):
                 train_rec_iFrames_features = vgg16.build_vgg16(
                     train_rec_iFrames,
                     end_point=args.perceptual_loss_endpoint).features
+
+        print('Global parameters:{}'.format(
+            count_parameters(tf.global_variables())))
+        print('Learnable model parameters:{}'.format(
+            count_parameters(tf.trainable_variables())))
 
         # DEFINE METRICS
         if args.loss_id == 0:
@@ -118,7 +120,7 @@ def training(args):
                 train_iFrames_features,
                 train_rec_iFrames_features)
 
-            tf.summary_scalar('train_perceptual_loss',\
+            tf.summary.scalar('train_perceptual_loss',\
                 train_perceptual_loss)
 
             total_train_loss += train_perceptual_loss\
@@ -196,10 +198,28 @@ def training(args):
                     end_frames,
                     mid_frames,
                     rec_mid_frames,
+                    training=True,
                     iteration=iteration,
                     save_path=os.path.join(
                         CKPT_PATH,
-                        'plots/'))
+                        'train_plots/'))
+
+                start_frames, end_frames, mid_frames,\
+                    rec_mid_frames = sess.run(
+                        [val_fFrames, val_lFrames,\
+                            val_iFrames,
+                            val_rec_iFrames])
+
+                visualize_frames(
+                    start_frames,
+                    end_frames,
+                    mid_frames,
+                    rec_mid_frames,
+                    training=False,
+                    iteration=iteration,
+                    save_path=os.path.join(
+                        CKPT_PATH,
+                        'validation_plots/'))
 
         print('Training complete.....')
 
@@ -298,6 +318,12 @@ if __name__ == '__main__':
         default=1,
         help='Specifies whether to run the script in DEBUG mode')
 
+    parser.add_argument(
+        '--additional_info',
+        type=str,
+        default='',
+        help='Additional details to identify model in dir')
+
     args = parser.parse_args()
 
     if args.optimizer == 'adam': args.optim_id = 1
@@ -326,6 +352,10 @@ if __name__ == '__main__':
     if args.weight_decay:
         args.ckpt_folder_name += '_ridgeWeightDecay-{}'.format(
             str(args.weight_decay))
+
+    if args.additional_info:
+        args.ckpt_folder_name += '_{}'.format(
+            args.additional_info)
 
     if args.debug:
         args.ckpt_folder_name = 'demo'

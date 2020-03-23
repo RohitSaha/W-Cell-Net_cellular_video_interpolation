@@ -27,10 +27,10 @@ def get_optimizer(train_loss, optim_id=1,
     return train_op
 
 
-def count_parameters():
+def count_parameters(variables):
     return np.sum(
         [np.prod(
             v.get_shape().as_list())
-            for v in tf.trainable_variables()]) 
+            for v in variables]) 
 
 

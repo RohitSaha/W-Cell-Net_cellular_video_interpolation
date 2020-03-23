@@ -229,7 +229,7 @@ def decoder(inputs, layer_dict_fFrames,
     return decode_4
 
 
-def build_bipn(fFrames, lFrames, use_batch_norm=False,
+def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
                 is_training=False, starting_out_channels=8):
 
     with tf.variable_scope('encoder_1'):
@@ -267,9 +267,27 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
             encode_Frames,
             layer_dict_fFrames,
             layer_dict_lFrames,
+            n_IF=n_IF,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
             is_verbose=True)
+
+    # adding skip connection at the input layer
+    rec_iFrames = tf.concat(
+        [fFrames, rec_iFrames, lFrames],
+        axis=-1)
+    get_shape = rec_iFrames.get_shape().as_list()
+    print('Skip connection at input layer:{}'.format(
+        get_shape))
+
+    # 3x3 conv layer to reduce channels to :
+    with tf.variable_scope('final_conv'):
+        rec_iFrames = CBR(
+            rec_iFrames, 'conv_final', n_IF,
+            activation=tf.keras.activations.relu,
+            kernel_size=3, stride=1,
+            is_training=is_training,
+            use_batch_norm=use_batch_norm)
 
     rec_iFrames = tf.transpose(
         rec_iFrames,
@@ -280,3 +298,4 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
     print('Final decoder:{}'.format(rec_iFrames))
 
     return rec_iFrames
+
