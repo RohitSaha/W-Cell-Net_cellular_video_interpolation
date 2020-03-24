@@ -272,6 +272,7 @@ def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
             is_training=is_training,
             is_verbose=True)
 
+    '''
     # adding skip connection at the input layer
     rec_iFrames = tf.concat(
         [fFrames, rec_iFrames, lFrames],
@@ -288,6 +289,7 @@ def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
             kernel_size=3, stride=1,
             is_training=is_training,
             use_batch_norm=use_batch_norm)
+    '''
 
     rec_iFrames = tf.transpose(
         rec_iFrames,
