@@ -13,6 +13,6 @@ python train_skip_conn_separate_encoder_bipn.py --train_iters 100000 \
     --perceptual_loss_weight 0.0 \
     --perceptual_loss_endpoint 'conv4_3' \
     --model_name 'skip_conn_separate_encoder_bipn' \
-    --starting_out_channels 32 \
+    --starting_out_channels 8 \
     --additional_info '' \
     --debug 0
