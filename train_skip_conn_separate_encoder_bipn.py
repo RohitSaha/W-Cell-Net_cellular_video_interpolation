@@ -52,7 +52,8 @@ def training(args):
             read_and_decode(
                 filename_queue=train_queue,
                 is_training=True,
-                batch_size=args.batch_size)
+                batch_size=args.batch_size,
+                n_intermediate_frames=args.n_IF)
 
         val_queue = tf.train.string_input_producer(
             [VAL_REC_PATH], num_epochs=None)
@@ -60,7 +61,8 @@ def training(args):
             read_and_decode(
                 filename_queue=val_queue,
                 is_training=False,
-                batch_size=args.batch_size)
+                batch_size=args.batch_size,
+                n_intermediate_frames=args.n_IF)
 
         with tf.variable_scope('separate_bipn'):
             print('TRAIN FRAMES (first):')
@@ -69,6 +71,7 @@ def training(args):
                 train_lFrames,
                 use_batch_norm=True,
                 is_training=True,
+                n_IF=args.n_IF,
                 starting_out_channels=args.starting_out_channels)
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
@@ -77,6 +80,7 @@ def training(args):
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,
+                n_IF=args.n_IF,
                 is_training=False,
                 starting_out_channels=args.starting_out_channels)
             
@@ -324,6 +328,12 @@ if __name__ == '__main__':
         default='',
         help='Additional details to identify model in dir')
 
+    parser.add_argument(
+        '--n_IF',
+        type=int,
+        default=3,
+        help='Mentions the number of intermediate frames')
+
     args = parser.parse_args()
 
     if args.optimizer == 'adam': args.optim_id = 1
@@ -335,13 +345,14 @@ if __name__ == '__main__':
     # ckpt_folder_name: model-name_iters_batch_size_\
     # optimizer_lr_main-loss_starting-out-channels_\
     # additional-losses_loss-reg
-    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_startOutChannels-{}'.format(
+    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_nIF-{}_startOutChannels-{}'.format(
         args.model_name,
         str(args.train_iters),
         str(args.batch_size),
         args.optimizer,
         str(args.learning_rate),
         args.loss,
+        str(args.n_IF),
         str(args.starting_out_channels))
 
     if args.perceptual_loss_weight:
