@@ -40,6 +40,8 @@ def ssim_loss(prediction, ground_truth, max_val=2.,
     # Try block filter of 8x8
     # Gaussian filter of size 11x11 and width 1.5
     # is used. Image has to be at least 11x11 big.
+    # Need to consider scale when integrating with
+    # other losses
 
     ssim_loss = tf.image.ssim(
         prediction,
@@ -50,7 +52,7 @@ def ssim_loss(prediction, ground_truth, max_val=2.,
         k1=k1,
         k2=k2)
 
-    return ssim_loss
+    return 1.0-tf.math.reduce_mean(ssim_loss)
 
 def perceptual_loss(prediction, ground_truth):
 
