@@ -24,7 +24,7 @@ def conv_block(inputs, block_name='block_1',
             use_batch_norm=use_batch_norm)
 
         conv_2 = CBR(
-            conv_1, 'conv_2', out_channels*2,
+            conv_1, 'conv_2', out_channels,
             activation=tf.keras.activations.relu,
             kernel_size=kernel_size, stride=stride,
             is_training=is_training,

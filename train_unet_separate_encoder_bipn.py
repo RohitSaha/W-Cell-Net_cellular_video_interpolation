@@ -22,6 +22,7 @@ from models.utils.visualizer import visualize_frames
 from models import bipn
 from models import separate_encoder_bipn
 from models import skip_separate_encoder_bipn
+from models import skip_unet_separate_encoder_bipn
 from models import vgg16
 
 def training(args):
@@ -66,7 +67,7 @@ def training(args):
 
         with tf.variable_scope('separate_bipn'):
             print('TRAIN FRAMES (first):')
-            train_rec_iFrames = skip_separate_encoder_bipn.build_bipn(
+            train_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
                 train_fFrames,
                 train_lFrames,
                 use_batch_norm=True,
@@ -76,12 +77,12 @@ def training(args):
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
-            val_rec_iFrames = skip_separate_encoder_bipn.build_bipn(
+            val_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,
-                n_IF=args.n_IF,
                 is_training=False,
+                n_IF=args.n_IF,
                 starting_out_channels=args.starting_out_channels)
             
         if args.perceptual_loss_weight:
