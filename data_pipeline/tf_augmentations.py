@@ -52,12 +52,12 @@ def gaussian_filter(img,k_size=(7,7),mean=0,std=3):
     '''
     img_shape = img.get_shape()
 
-    if len(img_shape)==4:
-        batch_size = img_shape[0]
+    if len(img_shape)==5:
         
         img = tf.reshape(tf.transpose(
         img,perm=[0,2,1,3,4]),
-        [batch_size,100,-1,1])
+        [img_shape[0],img_shape[2],
+        -1,img_shape[4]])
 
 
     width = k_size[0]
@@ -71,6 +71,13 @@ def gaussian_filter(img,k_size=(7,7),mean=0,std=3):
         strides=[1,1,1,1],padding='SAME')
 
     blurred_img = tf.stop_gradient(blurred_img)
+
+    if len(img_shape)==5:
+
+        blurred_img = tf.transpose(tf.reshape(
+        blurred_img,[img_shape[0],img_shape[2],
+        -1,img_shape[3],img_shape[4]]),
+        perm=[0,2,1,3,4])
 
     return blurred_img
 
