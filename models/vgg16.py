@@ -412,6 +412,14 @@ class vgg16:
 def build_vgg16(imgs, end_point='conv4_3', verbose=False):
     return vgg16(imgs, end_point=end_point, verbose=verbose)
 
+def build_vgg16(imgs, end_point = 'conv4_3',verbose = False):
+    return vgg16(imgs, end_point = end_point,verbose = verbose)
+
+
+
+
+
+
 # if __name__ == '__main__':
 #     sess = tf.Session()
 #     imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])

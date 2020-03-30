@@ -1,4 +1,85 @@
 import tensorflow as tf
+import math as pymath
+
+def gaussian_kernel (k_size=(7,7),mean=0,std=1):
+    '''
+    creates 2 probability ditributions 
+    (p_dist_1,p_dist_2) with lengths determined 
+    by k_size and the does the outer product
+
+    Args:
+        k_size: tuple, [kernel_height, kernel_width]
+        mean: scalar, gaussian distribution mean
+        std: scalar, gaussian distribution deviation
+
+    Output:
+        gauss_kernel: [kernel_height, kernel_width]
+                    gaussian weights
+    '''
+
+    p_dist_1 = tf.map_fn(lambda x : 
+        tf.math.exp(-0.5*((x-mean)/std)**2)/(
+            std*tf.math.sqrt(2*pymath.pi)),
+        tf.range((-k_size[0]+1)//2,(k_size[0]+1)//2,
+            dtype=tf.float32))
+
+    p_dist_2 = tf.map_fn(lambda x : 
+        tf.math.exp(-0.5*((x-mean)/std)**2)/(
+            std*tf.math.sqrt(2*m.pi)),
+        tf.range((-k_size[1]+1)//2,(k_size[1]+1)//2,
+            dtype=tf.float32))
+
+    gauss_kernel = tf.einsum('i,j->ij',p_dist_1, 
+        p_dist_2)
+
+    return gauss_kernel/tf.math.reduce_sum(
+        gauss_kernel)
+
+def gaussian_filter(img,k_size=(7,7),mean=0,std=3):
+    
+    '''
+    Create a gaussian kernel of shape k_size and
+    convolve with image to generate filtered image
+
+    Args:
+        img: tensors [B,H,W,1] or [B,#frames,H,W,1]
+        k_size: tuple, [kernel_height, kernel_width]
+        mean: scalar, gaussian distribution mean
+        std: scalar, gaussian distribution deviation
+
+    Output:
+        blurred_image: same shape as img
+    '''
+    img_shape = img.get_shape()
+
+    if len(img_shape)==5:
+        
+        img = tf.reshape(tf.transpose(
+        img,perm=[0,2,1,3,4]),
+        [img_shape[0],img_shape[2],
+        -1,img_shape[4]])
+
+
+    width = k_size[0]
+    height = k_size[1]
+
+    g_kernel = gaussian_kernel(k_size=k_size,
+        mean=mean,std=std)
+
+    blurred_img = tf.nn.conv2d(img,
+        tf.reshape(g_kernel,[width,height,1,1]),
+        strides=[1,1,1,1],padding='SAME')
+
+    blurred_img = tf.stop_gradient(blurred_img)
+
+    if len(img_shape)==5:
+
+        blurred_img = tf.transpose(tf.reshape(
+        blurred_img,[img_shape[0],img_shape[2],
+        -1,img_shape[3],img_shape[4]]),
+        perm=[0,2,1,3,4])
+
+    return blurred_img
 
 def random_brightness(frames):
 

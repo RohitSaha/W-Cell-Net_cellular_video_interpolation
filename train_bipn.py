@@ -80,6 +80,21 @@ def training(args):
             
         print('Model parameters:{}'.format(
             count_parameters()))
+<<<<<<< HEAD
+        # Weights should be kept locally ~ 500 MB space
+        with tf.variable_scope('vgg16'):
+            train_iFrames_features = vgg16.build_vgg16(
+                train_iFrames, end_point='conv4_3').features
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            train_rec_iFrames_features = vgg16.build_vgg16(
+                train_rec_iFrames, end_point='conv4_3').features
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            val_iFrames_features = vgg16.build_vgg16(
+                val_iFrames, end_point='conv4_3').features
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            val_rec_iFrames_features = vgg16.build_vgg16(
+                val_rec_iFrames, end_point='conv4_3').features
+=======
 
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
@@ -91,6 +106,7 @@ def training(args):
                 train_rec_iFrames_features = vgg16(
                     train_rec_iFrames,
                     end_point='conv4_3')
+>>>>>>> 8265dce0293b7d76f6dea7420436864187c1b4f3
 
         # DEFINE METRICS
         if args.loss_id == 0:
