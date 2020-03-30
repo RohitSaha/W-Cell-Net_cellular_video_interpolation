@@ -9,4 +9,3 @@ print('Waiting time begins.....')
 while(diff < wait_time):
     diff = time.time() - start
 
-print('Starting new program.....')

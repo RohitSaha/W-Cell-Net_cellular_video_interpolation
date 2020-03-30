@@ -126,10 +126,18 @@ def upconv_block(inputs, block_name='block_1',
                 net, (25, 25),
                 align_corners=True)
 
+        # Use tanh for the last decoder conv layer
+        if block_name == 'block_4':
+            activation = tf.keras.activations.tanh
+        else:
+            activation = tf.keras.activations.relu
+
+        activation = tf.keras.activations.tanh
+
         for i in range(1): 
             net = CBR(
                 net, 'conv_{}'.format(str(i)), out_channels,
-                activation=tf.keras.activations.tanh, # tanh
+                activation=activation, # tanh
                 kernel_size=kernel_size, stride=stride,
                 is_training=is_training,
                 use_batch_norm=use_batch_norm)
