@@ -11,6 +11,7 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
+from data_pipeline.tf_augmentations import gaussian_filter 
 from models.utils.optimizer import get_optimizer
 from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
@@ -63,6 +64,14 @@ def training(args):
                 is_training=False,
                 batch_size=args.batch_size,
                 n_intermediate_frames=args.n_IF)
+
+        # Apply gaussian blurring manually
+        train_fFrames = gaussian_filter(train_fFrames)
+        train_lFrames = gaussian_filter(train_lFrames)
+        train_iFrames = gaussian_filter(train_iFrames)
+        val_fFrames = gaussian_filter(val_fFrames)
+        val_lFrames = gaussian_filter(val_lFrames)
+        val_iFrames = gaussian_filter(val_iFrames)
 
         with tf.variable_scope('separate_bipn'):
             print('TRAIN FRAMES (first):')

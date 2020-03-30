@@ -52,33 +52,35 @@ def gaussian_filter(img,k_size=(7,7),mean=0,std=3):
     '''
     img_shape = img.get_shape()
 
-    # If :fFrame or :lFrame, add batch dimension
-    if len(img_shape) == 3:
-        img = tf.expand_dims(
-            img,
-            axis=0)
+    if len(img_shape)==5:
+        
+        img = tf.reshape(tf.transpose(
+        img,perm=[0,2,1,3,4]),
+        [img_shape[0],img_shape[2],
+        -1,img_shape[4]])
+
 
     width = k_size[0]
     height = k_size[1]
-    
+
     g_kernel = gaussian_kernel(k_size=k_size,
         mean=mean,std=std)
-    g_kernel = tf.reshape(
-        g_kernel,
-        [width, height, 1, 1])
 
-    blurred_img = tf.nn.conv2d(
-        img,
-        g_kernel,
-        strides=[1,1,1,1],
-        padding='SAME')
+    blurred_img = tf.nn.conv2d(img,
+        tf.reshape(g_kernel,[width,height,1,1]),
+        strides=[1,1,1,1],padding='SAME')
 
     blurred_img = tf.stop_gradient(blurred_img)
-    
-    if len(img_shape) == 3:
-        blurred_img = blurred_img[0, ...]
+
+    if len(img_shape)==5:
+
+        blurred_img = tf.transpose(tf.reshape(
+        blurred_img,[img_shape[0],img_shape[2],
+        -1,img_shape[3],img_shape[4]]),
+        perm=[0,2,1,3,4])
 
     return blurred_img
+
 
 def random_brightness(frames):
 
@@ -101,6 +103,7 @@ def random_contrast(frames):
         1.1)
 
     return frames
+
 
 def random_lr_flip(frames):
 

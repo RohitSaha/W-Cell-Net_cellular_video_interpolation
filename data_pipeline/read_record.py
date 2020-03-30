@@ -61,14 +61,6 @@ def read_and_decode(filename_queue=[], is_training=False,
     lFrame = tf.cast(lFrame, tf.float32)
     iFrame = tf.cast(iFrame, tf.float32)
 
-    # mandatory gaussian blurring, window:7, mean:0, std:3
-    fFrame = tf_augmentations.gaussian_filter(
-        fFrame)
-    lFrame = tf_augmentations.gaussian_filter(
-        lFrame)
-    iFrame = tf_augmentations.gaussian_filter(
-        iFrame)
-
     # check flag for augmentations
     if is_training:
         fFrame, lFrame, iFrame = tf_augmentations.augment(
