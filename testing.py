@@ -11,12 +11,14 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
-from data_pipeline.tf_augmentations import gaussian_filter 
 from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
 from models.utils.visualizer import visualize_frames
-from models.utils.metrics import *
+from models.utils.metrics import metric_repeat_fframe
+from models.utils.metrics import metric_repeat_lframe
+from models.utils.metrics import metric_weighted_frame
+from models.utils.metrics import metric_interpolated_frame
 
 from models import skip_separate_encoder_bipn
 from models import skip_unet_separate_encoder_bipn
@@ -204,10 +206,9 @@ def testing(model_path, args):
                 save_path=os.path.join(
                     model_path 
                     'test_plots/'))
-
         
         print('Testing complete.....')
-        with open(model_path + '/evaluation.pkl')\
+        with open(model_path + '/evaluation.pkl', 'wb')\
             as handle:
             pickle.dump(metrics, handle)
         print('Pickle file dumped.....')
@@ -258,6 +259,18 @@ def control(args):
             best_if_model = runnables[model_path_id]
 
     print('Evaluated all models.....')
+
+    path = '/media/data/movie/dataset/tf_records'
+    files = os.listdir(path)
+    files = [
+        fi
+        for fi in files
+        if fi.endswith('pkl')]
+    with open(path + '/master_metics_{}.pkl'.format(str(len(files))),\
+        'wb') as handle:
+        pickle.dump(master_metrics, handle)
+    print('Master metric file dumped.....')
+
     print('Best stats:')
     print('Model with lowest rep_first loss:{}, {}'.format(
         best_rf_model, best_rf))
@@ -287,5 +300,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    training(args)
+    control(args)
 
