@@ -13,6 +13,15 @@ def huber_loss(prediction, ground_truth,
         ground_truth)
 
 
+def l1_loss(prediction, ground_truth):
+
+    loss = tf.reduce_sum(
+        tf.abs(
+            prediction - ground_truth))
+
+    return loss
+
+
 def l2_loss(prediction, ground_truth):
 
     loss = tf.nn.l2_loss(
