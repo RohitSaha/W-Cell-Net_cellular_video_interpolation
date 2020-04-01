@@ -180,21 +180,17 @@ def testing(model_path, args):
         # START TRAINING HERE
         for iteration in range(test_iters):
 
-            # get metrics
+            # get frames and metrics
+            start_frames, end_frames, mid_frames, rec_mid_frames,\
             repeat_first, repeat_last, weighted, true_metric = sess.run(
-                [repeat_fFrame, repeat_lFrame, weighted_frame,\
+                [test_fFrames, test_lFrames, test_iFrames, test_rec_iFrames,\
+                repeat_fFrame, repeat_lFrame, weighted_frame,\
                     inter_frame])
+
             metrics['repeat_first'].append(repeat_first)
             metrics['repeat_last'].append(repeat_last)
             metrics['weighted_frames'].append(weighted)
             metrics['inter_frames'].append(true_metric)
-
-            # get plots
-            start_frames, end_frames, mid_frames,\
-                rec_mid_frames = sess.run(
-                    [test_fFrames, test_lFrames,\
-                        test_iFrames,
-                        test_rec_iFrames])
 
             visualize_frames(
                 start_frames,
