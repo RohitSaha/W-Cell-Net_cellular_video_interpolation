@@ -16,6 +16,7 @@ from models.utils.optimizer import get_optimizer
 from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
+from models.utils.losses import l1_loss
 from models.utils.losses import ridge_weight_decay
 from models.utils.losses import perceptual_loss
 from models.utils.visualizer import visualize_frames
@@ -130,9 +131,15 @@ def training(args):
             val_loss = l2_loss(
                 val_iFrames, val_rec_iFrames) 
 
+        elif args.loss_id == 2:
+            train_loss = l1_loss(
+                train_iFrames, train_rec_iFrames)
+            val_loss = l1_loss(
+                val_iFrames, val_rec_iFrames)
+
         total_train_loss = train_loss
-        tf.summary.scalar('train_l2_loss', train_loss)
-        tf.summary.scalar('total_val_l2_loss', val_loss)
+        tf.summary.scalar('train_main_loss', train_loss)
+        tf.summary.scalar('total_val_loss', val_loss)
 
         if args.perceptual_loss_weight:
             train_perceptual_loss = perceptual_loss(
@@ -299,7 +306,7 @@ if __name__ == '__main__':
         '--loss',
         type=str,
         default='l2',
-        help='0:huber, 1:l2')
+        help='0:huber, 1:l2, 2:l1')
 
     parser.add_argument(
         '--weight_decay',
@@ -362,6 +369,7 @@ if __name__ == '__main__':
 
     if args.loss == 'huber': args.loss_id = 0
     elif args.loss == 'l2': args.loss_id = 1
+    elif args.loss == 'l1': args.loss_id = 2
 
     # ckpt_folder_name: model-name_iters_batch_size_\
     # optimizer_lr_main-loss_starting-out-channels_\

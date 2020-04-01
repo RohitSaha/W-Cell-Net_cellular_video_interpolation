@@ -15,6 +15,7 @@ from models.utils.optimizer import get_optimizer
 from models.utils.optimizer import count_parameters
 from models.utils.losses import huber_loss
 from models.utils.losses import l2_loss
+from models.utils.losses import l1_loss
 from models.utils.losses import ridge_weight_decay
 from models.utils.losses import perceptual_loss
 from models.utils.visualizer import visualize_frames
@@ -73,7 +74,8 @@ def training(args):
                 use_batch_norm=True,
                 is_training=True,
                 n_IF=args.n_IF,
-                starting_out_channels=args.starting_out_channels)
+                starting_out_channels=args.starting_out_channels,
+                use_attention=args.use_attention)
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
@@ -83,7 +85,8 @@ def training(args):
                 use_batch_norm=True,
                 is_training=False,
                 n_IF=args.n_IF,
-                starting_out_channels=args.starting_out_channels)
+                starting_out_channels=args.starting_out_channels,
+                use_attention=args.use_attention)
             
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
@@ -115,6 +118,12 @@ def training(args):
                 train_iFrames, train_rec_iFrames)
             val_loss = l2_loss(
                 val_iFrames, val_rec_iFrames) 
+
+        elif args.loss_id == 2:
+            train_loss = l1_loss(
+                train_iFrames, train_rec_iFrames)
+            val_loss = l1_loss(
+                val_iFrames, val_rec_iFrames)
 
         total_train_loss = train_loss
         tf.summary.scalar('train_l2_loss', train_loss)
@@ -285,7 +294,7 @@ if __name__ == '__main__':
         '--loss',
         type=str,
         default='l2',
-        help='0:huber, 1:l2')
+        help='0:huber, 1:l2, 2:l1')
 
     parser.add_argument(
         '--weight_decay',
@@ -335,6 +344,12 @@ if __name__ == '__main__':
         default=3,
         help='Mentions the number of intermediate frames')
 
+    parser.add_argument(
+        '--use_attention',
+        type=bool,
+        default=False,
+        help='Specifies if self spatial attention is to be used')
+
     args = parser.parse_args()
 
     if args.optimizer == 'adam': args.optim_id = 1
@@ -342,6 +357,7 @@ if __name__ == '__main__':
 
     if args.loss == 'huber': args.loss_id = 0
     elif args.loss == 'l2': args.loss_id = 1
+    elif args.loss == 'l1': args.loss_id = 2
 
     # ckpt_folder_name: model-name_iters_batch_size_\
     # optimizer_lr_main-loss_starting-out-channels_\
@@ -364,6 +380,9 @@ if __name__ == '__main__':
     if args.weight_decay:
         args.ckpt_folder_name += '_ridgeWeightDecay-{}'.format(
             str(args.weight_decay))
+
+    if args.use_attention:
+        args.ckpt_folder_name += '_selfAttention'
 
     if args.additional_info:
         args.ckpt_folder_name += '_{}'.format(
