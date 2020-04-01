@@ -25,6 +25,8 @@ from models import separate_encoder_bipn
 from models import skip_separate_encoder_bipn
 from models import vgg16
 
+std_dev = 1
+
 def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
@@ -66,12 +68,14 @@ def training(args):
                 n_intermediate_frames=args.n_IF)
 
         # Apply gaussian blurring manually
-        train_fFrames = gaussian_filter(train_fFrames)
-        train_lFrames = gaussian_filter(train_lFrames)
-        train_iFrames = gaussian_filter(train_iFrames)
-        val_fFrames = gaussian_filter(val_fFrames)
-        val_lFrames = gaussian_filter(val_lFrames)
-        val_iFrames = gaussian_filter(val_iFrames)
+        '''
+        train_fFrames = gaussian_filter(train_fFrames, std=std_dev)
+        train_lFrames = gaussian_filter(train_lFrames, std=std_dev)
+        train_iFrames = gaussian_filter(train_iFrames, std=std_dev)
+        val_fFrames = gaussian_filter(val_fFrames, std=std_dev)
+        val_lFrames = gaussian_filter(val_lFrames, std=std_dev)
+        val_iFrames = gaussian_filter(val_iFrames, std=std_dev)
+        '''
 
         with tf.variable_scope('separate_bipn'):
             print('TRAIN FRAMES (first):')

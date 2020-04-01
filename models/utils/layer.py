@@ -40,6 +40,40 @@ def linear(input_var, layer_name, output_units,
 
         return activation(output_var)
 
+def spatial_attention(input_var,
+        activation=tf.keras.activations.softmax):
+
+    shape = input_var.get_shape().as_list()
+    N, H, W, C = shape[1], shape[2]
+
+    # [N, H, W, C] -> [N, C, H, W]
+    reshape_input = tf.transpose(
+        input_var,
+        [0, 3, 1, 2])
+    # [N, C, H, W] -> [N, C, H * W]
+    reshape_input = tf.reshape(
+        reshape_input,
+        [N, C, H * W])
+        
+    # Spatial attention
+    self_attention_mask = activation(
+        reshape_input,
+        axis=-1)
+
+    reshape_input = reshape_input * self_attention_mask
+
+    # [N, C, H * W] -> [N, C, H, W]
+    reshape_input = tf.reshape(
+        reshape_input,
+        [N, C, H, W])
+
+    # [N, C, H, W] -> [N, H, W, C]
+    reshape_input = tf.transpose(
+        reshape_input,
+        [0, 2, 3, 1])
+
+    return reshape_input
+
 
 def conv_batchnorm_relu(input_var, layer_name, 
         out_channels,

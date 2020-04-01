@@ -56,17 +56,17 @@ def read_and_decode(filename_queue=[], is_training=False,
         iFrame,
         [n_intermediate_frames, height, width, 1])
 
-    # cast images to float
-    fFrame = tf.cast(fFrame, tf.float32)
-    lFrame = tf.cast(lFrame, tf.float32)
-    iFrame = tf.cast(iFrame, tf.float32)
-
     # check flag for augmentations
     if is_training:
         fFrame, lFrame, iFrame = tf_augmentations.augment(
             fFrame,
             lFrame,
             iFrame)
+
+    # cast images to float
+    fFrame = tf.cast(fFrame, tf.float32)
+    lFrame = tf.cast(lFrame, tf.float32)
+    iFrame = tf.cast(iFrame, tf.float32)
 
     # pixels in range [-1, 1]
     fFrame = fFrame / 127.5 - 1.
