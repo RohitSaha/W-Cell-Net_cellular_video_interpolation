@@ -211,35 +211,65 @@ def testing(model_path, args):
             pickle.dump(metrics, handle)
         print('Pickle file dumped.....')
 
-    return
+    return metrics
+
+
+def control(args):
+
+    # get runnable files
+    runnables = get_files()
+    master_metrics = {}
+    best_rf = float('inf')
+    best_rl = float('inf')
+    best_wf = float('inf')
+    best_if = float('inf')
+
+    for model_path_id in range(len(runnables)):
+        metrics = testing(
+            runnable[model_path_id],
+            args)        
+
+        rep_first = metrics['repeat_first']
+        rep_last = metrics['repeat_last']
+        weight_frames = metrics['weighted_frames']
+        inter_frames = metrics['inter_frames']
+    
+        mean_rf = sum(rep_first) / len(rep_first)
+        mean_rl = sum(rep_last) / len(rep_last)
+        mean_wf = sum(weight_frames) / len(weight_frames)
+        mean_if = sum(inter_frames) / len(inter_frames)
+
+        master_metrics[runnable[model_path_id]] = [
+            mean_rf, mean_rl, mean_wf, mean_if]
+
+        # Get the best model out of all models
+        if mean_rf < best_rf:
+            best_rf = mean_rf
+            best_rf_model = runnables[model_path_id]
+        if mean_rl < best_rl:
+            best_rl = mean_rl
+            best_rl_model = runnables[model_path_id]
+        if mean_wf < best_wf:
+            best_wf = mean_wf
+            best_wf_model = runnables[model_path_id]
+        if mean_if < best_if:
+            best_if = mean_if
+            best_if_model = runnables[model_path_id]
+
+    print('Evaluated all models.....')
+    print('Best stats:')
+    print('Model with lowest rep_first loss:{}, {}'.format(
+        best_rf_model, best_rf))
+    print('Model with lowest rep_last loss:{}, {}'.format(
+        best_rl_model, best_rl))
+    print('Model with lowest weighted loss:{}, {}'.format(
+        best_wf_model, best_wf))
+    print('Model with lowest interframe loss:{}, {}'.format(
+        best_if_model, best_if))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='params of running the experiment')
-
-    parser.add_argument(
-        '--test_iters',
-        type=int,
-        default=15000,
-        help='Mention the number of training iterations')
-
-    parser.add_argument(
-        '--experiment_name',
-        type=str,
-        default='slack_20px_fluorescent_window_5',
-        help='to mention the experiment folder in tf_records')
-
-    parser.add_argument(
-        '--optimizer',
-        type=str,
-        default='adam',
-        help='1. adam, 2. SGD + momentum')
-
-    parser.add_argument(
-        '--learning_rate',
-        type=float,
-        default=1e-3,
-        help='To mention the starting learning rate')
 
     parser.add_argument(
         '--batch_size',
@@ -248,87 +278,12 @@ if __name__ == '__main__':
         help='To mention the number of samples in a batch')
 
     parser.add_argument(
-        '--loss',
-        type=str,
-        default='l2',
-        help='0:huber, 1:l2')
-
-    parser.add_argument(
-        '--weight_decay',
-        type=float,
-        default=0.01,
-        help='To mention the strength of L2 weight decay')
-
-    parser.add_argument(
-        '--perceptual_loss_weight',
-        type=float,
-        default=1.0,
-        help='Mention strength of perceptual loss')
-
-    parser.add_argument(
-        '--perceptual_loss_endpoint',
-        type=str,
-        default='conv4_3',
-        help='Mentions the layer from which features are to be extracted')
-
-    parser.add_argument(
-        '--model_name',
-        type=str,
-        default='bipn',
-        help='Mentions name of model to be run')
-
-    parser.add_argument(
-        '--starting_out_channels',
-        type=int,
-        default=8,
-        help='Specify the number of out channels for the first conv')
-
-    parser.add_argument(
         '--debug',
         type=int,
         default=1,
         help='Specifies whether to run the script in DEBUG mode')
 
-    parser.add_argument(
-        '--additional_info',
-        type=str,
-        default='',
-        help='Additional details to identify model in dir')
-
-    parser.add_argument(
-        '--n_IF',
-        type=int,
-        default=3,
-        help='Mentions the number of intermediate frames')
-
     args = parser.parse_args()
-
-    if args.optimizer == 'adam': args.optim_id = 1
-    elif args.optimizer == 'sgd': args.optim_id = 2
-
-    if args.loss == 'huber': args.loss_id = 0
-    elif args.loss == 'l2': args.loss_id = 1
-
-    # ckpt_folder_name: model-name_iters_batch_size_\
-    # optimizer_lr_main-loss_starting-out-channels_\
-    # additional-losses_loss-reg
-    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_nIF-{}_startOutChannels-{}'.format(
-        args.model_name,
-        str(100000),
-        str(args.batch_size),
-        args.optimizer,
-        str(args.learning_rate),
-        args.loss,
-        str(args.n_IF),
-        str(args.starting_out_channels))
-
-    if args.perceptual_loss_weight:
-        args.ckpt_folder_name += '_perceptualLoss-{}-{}'.format(
-            args.perceptual_loss_endpoint,
-            str(args.perceptual_loss_weight))
-
-    if args.debug:
-        args.ckpt_folder_name = 'demo'
 
     training(args)
 
