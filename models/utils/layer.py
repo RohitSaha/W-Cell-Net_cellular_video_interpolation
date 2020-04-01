@@ -44,7 +44,7 @@ def spatial_attention(input_var,
         activation=tf.keras.activations.softmax):
 
     shape = input_var.get_shape().as_list()
-    N, H, W, C = shape[1], shape[2]
+    N, H, W, C = shape
 
     # [N, H, W, C] -> [N, C, H, W]
     reshape_input = tf.transpose(

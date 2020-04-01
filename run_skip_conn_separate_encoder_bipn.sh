@@ -18,5 +18,6 @@ python train_skip_conn_separate_encoder_bipn.py --train_iters 100000 \
     --model_name 'skip_conn_separate_encoder_bipn' \
     --starting_out_channels $out_channels \
     --n_IF $n_IF \
-    --additional_info 'inputLayerSkipConcatenation_tanhCBR' \
+    --use_attention True \
+    --additional_info '' \
     --debug 0
