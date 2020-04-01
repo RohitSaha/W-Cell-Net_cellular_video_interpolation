@@ -22,9 +22,10 @@ from models import skip_separate_encoder_bipn
 from models import skip_unet_separate_encoder_bipn
 from models import vgg16
 
-ROOT_DIR = '/media/data/movie/dataset/tf_records/'
+
 
 def get_files():
+    ROOT_DIR = '/media/data/movie/dataset/tf_records/'
     runnable = []
     experiments = os.listdir(ROOT_DIR)
     for exp in experiments:
@@ -266,6 +267,7 @@ def control(args):
         best_wf_model, best_wf))
     print('Model with lowest interframe loss:{}, {}'.format(
         best_if_model, best_if))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
