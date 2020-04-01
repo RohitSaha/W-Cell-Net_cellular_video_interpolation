@@ -5,6 +5,7 @@ from models.utils.layer import conv_batchnorm_relu as CBR
 from models.utils.layer import upconv_2D as UC
 from models.utils.layer import maxpool as MxP
 from models.utils.layer import avgpool as AvP
+from models.utils.layer import spatial_attention as Attn
 
 def conv_block(inputs, block_name='block_1',
                 out_channels=16,
@@ -148,7 +149,7 @@ def upconv_block(inputs, block_name='block_1',
 def decoder(inputs, layer_dict_fFrames,
             layer_dict_lFrames, use_batch_norm=False,
             n_IF=3, is_training=False,
-            is_verbose=False):
+            is_verbose=False, use_attention=False):
 
     get_shape = inputs.get_shape().as_list()
     out_channels = get_shape[-1]
@@ -173,6 +174,11 @@ def decoder(inputs, layer_dict_fFrames,
                 lFrames_encode_3,
                 axis=[-1])],
         axis=-1)
+
+    if use_attention:
+        decode_1 = Attn(decode_1)
+        if is_verbose: print('AttnDecode_1:{}'.format(decode_1))
+
     if is_verbose: print('MergeDecode_1:{}'.format(decode_1))
     # decode_1 channels: 256
     
@@ -199,6 +205,11 @@ def decoder(inputs, layer_dict_fFrames,
                 lFrames_encode_2,
                 axis=[-1])],
         axis=-1)
+
+    if use_attention:
+        decode_2 = Attn(decode_2)
+        if is_verbose: print('AttnDecode_2:{}'.format(decode_2))
+
     if is_verbose: print('MergeDecode_2:{}'.format(decode_2))
     # decode_2 channels: 192
 
@@ -222,6 +233,11 @@ def decoder(inputs, layer_dict_fFrames,
                 lFrames_encode_1,
                 axis=[-1])],
         axis=-1)
+
+    if use_attention:
+        decode_3 = Attn(decode_3)
+        if is_verbose: print('AttnDecode_3:{}'.format(decode_3))
+
     if is_verbose: print('MergeDecode_3:{}'.format(decode_3))
     # decode_3 channels: 96
 
@@ -238,7 +254,8 @@ def decoder(inputs, layer_dict_fFrames,
 
 
 def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
-                is_training=False, starting_out_channels=8):
+                is_training=False, starting_out_channels=8,
+                use_attention=False, input_layer_skip=False):
 
     with tf.variable_scope('encoder_1'):
         encode_fFrames, layer_dict_fFrames = encoder(
@@ -278,26 +295,33 @@ def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
             n_IF=n_IF,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=True)
+            is_verbose=True,
+            use_attention=use_attention)
 
-    '''
-    # adding skip connection at the input layer
-    rec_iFrames = tf.concat(
-        [fFrames, rec_iFrames, lFrames],
-        axis=-1)
-    get_shape = rec_iFrames.get_shape().as_list()
-    print('Skip connection at input layer:{}'.format(
-        get_shape))
+    if input_layer_skip:
+        # adding skip connection at the input layer
+        rec_iFrames = tf.concat(
+            [fFrames, rec_iFrames, lFrames],
+            axis=-1)
+        get_shape = rec_iFrames.get_shape().as_list()
+        print('Skip connection at input layer:{}'.format(
+            get_shape))
 
-    # 3x3 conv layer to reduce channels to :
-    with tf.variable_scope('final_conv'):
-        rec_iFrames = CBR(
-            rec_iFrames, 'conv_final', n_IF,
-            activation=tf.keras.activations.relu,
-            kernel_size=3, stride=1,
-            is_training=is_training,
-            use_batch_norm=use_batch_norm)
-    '''
+        '''
+        # adding residual connection
+        rec_iFrames = rec_iFrames + fFrames
+        print('Residual connection:{}'.format(
+            rec_iFrames.get_shape().as_list()))
+        '''
+
+        # 3x3 conv layer to reduce channels to :
+        with tf.variable_scope('final_conv'):
+            rec_iFrames = CBR(
+                rec_iFrames, 'conv_final', n_IF,
+                activation=tf.keras.activations.relu,
+                kernel_size=3, stride=1,
+                is_training=is_training,
+                use_batch_norm=use_batch_norm)
 
     rec_iFrames = tf.transpose(
         rec_iFrames,
