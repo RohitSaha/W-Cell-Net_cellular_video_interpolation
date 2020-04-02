@@ -346,8 +346,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--use_attention',
-        type=bool,
-        default=False,
+        type=int,
+        default=0,
         help='Specifies if self spatial attention is to be used')
 
     args = parser.parse_args()
