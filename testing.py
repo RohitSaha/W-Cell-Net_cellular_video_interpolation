@@ -54,14 +54,20 @@ def get_model_details(model_path):
     details = model.split('_')
 
     model_name = details[0]
-    loss_index = details.index('l2')
+    try:
+        loss_index = details.index('l2')
+    except:
+        loss_index = details.index('l1')
+    
+    loss = details[loss_index]
     nIF = int(details[loss_index + 1][-1])
     out_channels = int(details[loss_index + 2].split(
         '-')[-1])
+    attention = details[loss_index + 3]
     additional_info = details[-1]
 
-    return model_name, nIF, out_channels,\
-        additional_info
+    return model_name, loss, nIF, out_channels,\
+        attention, additional_info
             
 
 def testing(model_path, args):
@@ -83,8 +89,9 @@ def testing(model_path, args):
         weight_path)
     
     # get model details
-    model_name, nIF, out_channels, additional_info = \
-        get_model_details(model_path)
+    model_name, loss, nIF, out_channels, attention,\
+        additional_info = get_model_details(
+            model_path)
 
     # get #test_samples based on experiment
     if n_IF == 3: test_samples = 18300
@@ -93,6 +100,14 @@ def testing(model_path, args):
     elif n_IF == 6: test_samples = 18235
     elif n_IF == 7: test_samples = 18204
     test_iters = test_samples // args.batch_size
+
+    # get attention
+    if attention == 'spatialAttention':
+        use_attention = 1
+        spatial_attention = 1
+    elif attention == 'channelAttention':
+        use_attention = 1
+        spatial_attention = 0
 
     # SCOPING BEGINS HERE
     tf.reset_default_graph()
@@ -117,7 +132,10 @@ def testing(model_path, args):
                     use_batch_norm=True,
                     is_training=False,
                     n_IF=n_IF,
-                    starting_out_channels=out_channels)
+                    starting_out_channels=out_channels,
+                    use_attention=use_attention,
+                    spatial_attention=spatial_attention)
+
             elif model_name == 'unet':
                 test_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
                     test_fFrames,
@@ -125,7 +143,9 @@ def testing(model_path, args):
                     use_batch_norm=True,
                     is_training=False,
                     n_IF=n_IF,
-                    starting_out_channels=out_channels)
+                    starting_out_channels=out_channels,
+                    use_attention=use_attention,
+                    spatial_attention=spatial_attention)
 
         print('Global parameters:{}'.format(
             count_parameters(tf.global_variables())))
@@ -133,13 +153,11 @@ def testing(model_path, args):
             count_parameters(tf.trainable_variables())))
 
         # DEFINE LOSS 
-        if args.loss_id == 0:
-            test_loss = huber_loss(
-                test_iFrames, test_rec_iFrames,
-                delta=1.)
-
-        elif args.loss_id == 1:
+        if loss == 'l2':
             test_loss = l2_loss(
+                test_iFrames, test_rec_iFrames)
+        elif loss == 'l1':
+            test_loss = l1_loss(
                 test_iFrames, test_rec_iFrames)
 
         # DEFINE METRICS

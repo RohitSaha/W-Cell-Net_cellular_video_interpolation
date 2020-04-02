@@ -27,11 +27,11 @@ def l1_loss(prediction, ground_truth):
         prediction - ground_truth)
 
     # Reduce sum along axis = 1, N_IF
-    loss = tf.reduce_sum(
+    l1_loss = tf.reduce_sum(
         difference,
         axis=1)
 
-    return tf.reduce_mean(loss)
+    return tf.reduce_mean(l1_loss)
 
 
 def l2_loss(prediction, ground_truth):
@@ -48,11 +48,11 @@ def l2_loss(prediction, ground_truth):
         prediction - ground_truth)
 
     # Reduce sum along axis=1, N_IF
-    loss = tf.reduce_sum(
+    l2_loss = tf.reduce_sum(
         difference,
         axis=1)
 
-    return tf.reduce_mean(loss)
+    return tf.reduce_mean(l2_loss)
 
 
 def ridge_weight_decay(parameters):
@@ -89,8 +89,20 @@ def ssim_loss(prediction, ground_truth, max_val=2.,
     return 1.0-tf.math.reduce_mean(ssim_loss)
 
 def perceptual_loss(prediction, ground_truth):
+    '''Performs L2 loss between 2 tensors.
+    Args:
+        :prediction: tensor of shape [N, H, W, C]
+        :ground_truth: tensor of shape [N, H, W, C]
+    Returns:
+        L2 scalar loss of tf.float32
+    '''
 
-    perceptual_loss = tf.nn.l2_loss(
+    difference = tf.square(
         prediction - ground_truth)
 
-    return perceptual_loss
+    # Reduce sum along axis=-1, C
+    perceptual_loss = tf.reduce_sum(
+        difference,
+        axis=-1)
+
+    return tf.reduce_mean(perceptual_loss)
