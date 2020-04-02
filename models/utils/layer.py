@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-#TODO: 1.maxpool3d, averagepool2d/3d
 
 def linear(input_var, layer_name, output_units,
         activation=tf.keras.activations.relu,

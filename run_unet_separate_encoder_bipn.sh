@@ -19,5 +19,6 @@ python train_unet_separate_encoder_bipn.py --train_iters 100000 \
     --starting_out_channels $out_channels \
     --n_IF $n_IF \
     --use_attention 0 \
+    --spatial_attention 0 \
     --additional_info 'gaussianBlur' \
     --debug 0

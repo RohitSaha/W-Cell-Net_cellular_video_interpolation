@@ -87,7 +87,8 @@ def training(args):
                 is_training=True,
                 n_IF=args.n_IF,
                 starting_out_channels=args.starting_out_channels,
-                use_attention=args.use_attention)
+                use_attention=args.use_attention,
+                spatial_attention=args.spatial_attention)
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
@@ -98,7 +99,8 @@ def training(args):
                 n_IF=args.n_IF,
                 is_training=False,
                 starting_out_channels=args.starting_out_channels,
-                use_attention=args.use_attention)
+                use_attention=args.use_attention,
+                spatial_attention=args.spatial_attention)
             
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
@@ -362,6 +364,12 @@ if __name__ == '__main__':
         default=0,
         help='Specifies if self spatial attention is to be used')
 
+    parser.add_argument(
+        '--spatial_attention',
+        type=int,
+        default=0,
+        help='Specifies whether to use spatial/channel attention')
+
     args = parser.parse_args()
 
     if args.optimizer == 'adam': args.optim_id = 1
@@ -394,7 +402,10 @@ if __name__ == '__main__':
             str(args.weight_decay))
 
     if args.use_attention:
-        args.ckpt_folder_name += '_selfAttention'
+        if args.spatial_attention:
+            args.ckpt_folder_name += '_spatialAttention'
+        else:
+            args.ckpt_folder_name += '_channelAttention'
 
     if args.additional_info:
         args.ckpt_folder_name += '_{}'.format(
