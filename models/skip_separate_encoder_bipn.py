@@ -5,7 +5,7 @@ from models.utils.layer import conv_batchnorm_relu as CBR
 from models.utils.layer import upconv_2D as UC
 from models.utils.layer import maxpool as MxP
 from models.utils.layer import avgpool as AvP
-from models.utils.layer import spatial_attention as Attn
+from models.utils.layer import spatial_attention as SAttn
 from models.utils.layer import channel_attention as CAttn
 
 def conv_block(inputs, block_name='block_1',
@@ -179,7 +179,7 @@ def decoder(inputs, layer_dict_fFrames,
 
     if use_attention:
         if spatial_attention:
-            decode_1 = Attn(decode_1)
+            decode_1 = SAttn(decode_1)
             if is_verbose: print('SpatialAttn_1:{}'.format(decode_1))
         else:
             decode_1 = CAttn(decode_1)
@@ -214,7 +214,7 @@ def decoder(inputs, layer_dict_fFrames,
 
     if use_attention:
         if spatial_attention:
-            decode_2 = Attn(decode_2)
+            decode_2 = SAttn(decode_2)
             if is_verbose: print('SpatialAttn_2:{}'.format(decode_2))
         else:
             decode_2 = CAttn(decode_2)
@@ -246,7 +246,7 @@ def decoder(inputs, layer_dict_fFrames,
 
     if use_attention:
         if spatial_attention:
-            decode_3 = Attn(decode_3)
+            decode_3 = SAttn(decode_3)
             if is_verbose: print('SpatialAttn_3:{}'.format(decode_3))
         else:
             decode_3 = CAttn(decode_3)
