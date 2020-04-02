@@ -40,6 +40,24 @@ def linear(input_var, layer_name, output_units,
 
         return activation(output_var)
 
+
+def channel_attention(input_var,
+        activation=tf.keras.activations.softmax):
+
+    shape = input_var.get_shape().as_list()
+    N, H, W, C = shape
+
+    # get softmax across channel dimension
+    attention = activation(
+        input_var,
+        axis=-1)
+
+    # apply attention
+    input_var = attention * input_var 
+    
+    return input_var
+
+
 def spatial_attention(input_var,
         activation=tf.keras.activations.softmax):
 
