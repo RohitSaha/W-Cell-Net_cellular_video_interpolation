@@ -14,20 +14,45 @@ def huber_loss(prediction, ground_truth,
 
 
 def l1_loss(prediction, ground_truth):
+    '''Performs L1 loss between 2 tensors.
+    Args:
+        :prediction: tensor of shape [N, N_IF, H, W, 1]
+        :ground_truth: tensor of shape [N, N_IF, H, W, 1]
+    Returns:
+        L1 scalar loss of tf.float32
+    '''
 
+    # Get absolute loss
+    difference = tf.abs(
+        prediction - ground_truth)
+
+    # Reduce sum along axis = 1, N_IF
     loss = tf.reduce_sum(
-        tf.abs(
-            prediction - ground_truth))
+        difference,
+        axis=1)
 
-    return loss
+    return tf.reduce_mean(loss)
 
 
 def l2_loss(prediction, ground_truth):
+    '''Performs L2 loss between 2 tensors.
+    Args:
+        :prediction: tensor of shape [N, N_IF, H, W, 1]
+        :ground_truth: tensor of shape [N, N_IF, H, W, 1]
+    Returns:
+        L2 scalar loss of tf.float32
+    '''
 
-    loss = tf.nn.l2_loss(
+    # Get squared loss
+    difference = tf.square(
         prediction - ground_truth)
 
-    return loss
+    # Reduce sum along axis=1, N_IF
+    loss = tf.reduce_sum(
+        difference,
+        axis=1)
+
+    return tf.reduce_mean(loss)
 
 
 def ridge_weight_decay(parameters):
