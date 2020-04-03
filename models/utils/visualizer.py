@@ -72,25 +72,25 @@ def visualize_frames(start_frames, end_frames,
             v_min = np.min(start_images[idx])
             v_min = np.min([np.min(end_images[idx]),v_min])
             v_min = np.min([np.min(true_mid_images[idx]),v_min])
-            v_min = np.min([np.min(gen_mid_images[idx]),v_min])
+            # v_min = np.min([np.min(gen_mid_images[idx]),v_min])
 
             v_max = np.max(start_images[idx])
             v_max = np.max([np.max(end_images[idx]),v_max])
             v_max = np.max([np.max(true_mid_images[idx]),v_max])
-            v_max = np.max([np.max(gen_mid_images[idx]),v_max])
+            # v_max = np.max([np.max(gen_mid_images[idx]),v_max])
         	# row 0, 2 ... show start and end frames 
             axes[row, col].imshow(
                 start_images[idx],
                 cmap="gray",
-                # vmin=v_min,
-                # vmax=v_max,
+                vmin=v_min,
+                vmax=v_max,
                 aspect="auto")
             axes[row, num_cols-1].axis("off")
             axes[row, num_cols-1].imshow(
                 end_images[idx],
                 cmap="gray",
-                # vmin=v_min,
-                # vmax=v_max,
+                vmin=v_min,
+                vmax=v_max,
                 aspect="auto")
             
 
@@ -101,8 +101,8 @@ def visualize_frames(start_frames, end_frames,
                 axes[row, col].imshow(
                     gen_mid_images[idx,col-1],
                     cmap="gray",
-                    # vmin=v_min,
-                    # vmax=v_max,
+                    vmin=v_min,
+                    vmax=v_max,
                     aspect="auto")
 
             else:
@@ -110,15 +110,19 @@ def visualize_frames(start_frames, end_frames,
                 axes[row, col].imshow(
                     true_mid_images[idx,col-1],
                     cmap="gray",
-                    # vmin=v_min,
-                    # vmax=-v_max,
+                    vmin=v_min,
+                    vmax=v_max,
                     aspect="auto")
+
+
+    plt.draw()
 
 
     plt.subplots_adjust(
         wspace=.02,
         hspace=.05)
-    plt.draw()
+
+
     filename = ['validation','training'][training]\
         +'_iteration_'\
         +str(iteration)+'.png' 
