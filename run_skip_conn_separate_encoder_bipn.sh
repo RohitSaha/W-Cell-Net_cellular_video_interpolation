@@ -13,7 +13,7 @@ python train_skip_conn_separate_encoder_bipn.py --train_iters 100000 \
     --batch_size 32 \
     --loss 'l2' \
     --weight_decay 0.0 \
-    --perceptual_loss_weight 0.0 \
+    --perceptual_loss_weight 0.01 \
     --perceptual_loss_endpoint 'conv4_3' \
     --model_name 'skip_conn_separate_encoder_bipn' \
     --starting_out_channels $out_channels \

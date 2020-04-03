@@ -102,8 +102,8 @@ def perceptual_loss(prediction, ground_truth):
         prediction - ground_truth)
 
     # Reduce sum along axis=-1, C
-    perceptual_loss = tf.reduce_sum(
-        difference,
-        axis=-1)
+    # perceptual_loss = tf.reduce_sum(
+    #     difference,
+    #     axis=-1)
 
-    return tf.reduce_mean(perceptual_loss)
+    return tf.reduce_mean(difference)
