@@ -91,8 +91,13 @@ def training(args):
                 spatial_attention=args.spatial_attention,
                 is_verbose=True)
 
+            # concatenate generated frames and real frames
+            train_discriminator_inputs = tf.concat(
+                [train_iFrames, train_rec_iFrames],
+                axis=0)
+
             train_discriminator_scores = discriminator.build_discriminator(
-                train_rec_iFrames,
+                train_discriminator_inputs,
                 use_batch_norm=True,
                 is_training=True,
                 starting_out_channels=args.discri_starting_out_channels,
@@ -111,8 +116,13 @@ def training(args):
                 spatial_attention=args.spatial_attention,
                 is_verbose=False)
 
+            # concatenate generated frames and real frames
+            val_discriminator_inputs = tf.concat(
+                [val_iFrames, val_rec_iFrames],
+                axis=0)
+
             val_discriminator_scores = discriminator.build_discriminator(
-                val_rec_iFrames,
+                val_discriminator_inputs,
                 use_batch_norm=True,
                 is_training=False,
                 starting_out_channels=args.discri_starting_out_channels,
