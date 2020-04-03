@@ -23,7 +23,7 @@ from models.utils.losses import perceptual_loss
 from models.utils.visualizer import visualize_frames
 
 from models import discriminator
-from models import skip_separate_encoder_bipn
+from models import generator_unet 
 from models import vgg16
 
 std_dev = 1
@@ -80,7 +80,7 @@ def training(args):
 
         with tf.variable_scope('cell_gan'):
             print('TRAIN FRAMES (first):')
-            train_rec_iFrames = skip_separate_encoder_bipn.build_bipn(
+            train_rec_iFrames = generator_unet.build_generator(
                 train_fFrames,
                 train_lFrames,
                 use_batch_norm=True,
@@ -100,7 +100,7 @@ def training(args):
 
         with tf.variable_scope('cell_gan', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
-            val_rec_iFrames = skip_separate_encoder_bipn.build_bipn(
+            val_rec_iFrames = generator_unet.build_generator(
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,
