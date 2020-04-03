@@ -20,5 +20,5 @@ python train_skip_conn_separate_encoder_bipn.py --train_iters 100000 \
     --n_IF $n_IF \
     --use_attention 0 \
     --spatial_attention 0 \
-    --additional_info 'reduceMean-L2_vminVmax' \
+    --additional_info 'reduceMean-L2' \
     --debug 0

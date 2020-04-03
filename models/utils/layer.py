@@ -6,8 +6,7 @@ def linear(input_var, layer_name, output_units,
         initializer=tf.keras.initializers.glorot_normal,
         batch_norm=False,
         update_collection=False,
-        is_training=True,
-        bias=False):
+        is_training=True):
 
     # Get shape of a tensor as a list
     shape = input_var.get_shape().as_list()
@@ -36,6 +35,9 @@ def linear(input_var, layer_name, output_units,
                 bias_var)
 
         #TODO: Incorporate batch norm layer
+
+        if activation is None:
+            return output_var
 
         return activation(output_var)
 
