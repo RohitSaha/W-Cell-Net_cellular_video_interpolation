@@ -71,11 +71,15 @@ def visualize_frames(start_frames, end_frames,
             axes[row, col].imshow(
                 start_images[idx],
                 cmap="gray",
+                vmin=-1,
+                vmax=1,
                 aspect="auto")
             axes[row, num_cols-1].axis("off")
             axes[row, num_cols-1].imshow(
                 end_images[idx],
                 cmap="gray",
+                vmin=-1,
+                vmax=1,
                 aspect="auto")
 
         for col in range (1,num_cols-1):
@@ -85,12 +89,16 @@ def visualize_frames(start_frames, end_frames,
                 axes[row, col].imshow(
                     gen_mid_images[idx,col-1],
                     cmap="gray",
+                    vmin=-1,
+                    vmax=1,
                     aspect="auto")
             else:
             	# row 0, 2 ... show true frames
                 axes[row, col].imshow(
                     true_mid_images[idx,col-1],
                     cmap="gray",
+                    vmin=-1,
+                    vmax=1,
                     aspect="auto")
 
 
