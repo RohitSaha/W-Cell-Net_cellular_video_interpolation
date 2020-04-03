@@ -50,7 +50,8 @@ def visualize_frames(start_frames, end_frames,
     fig, axes = plt.subplots(
         nrows=num_rows,
         ncols=num_cols,
-        figsize=(10,10)) 
+        figsize=(10,10))
+
 
     for row in range (num_rows):
 
@@ -67,20 +68,31 @@ def visualize_frames(start_frames, end_frames,
             axes[row, num_cols-1].axis("off")
             axes[row,num_cols-1].text(0,.5,'Frames')
         else:
+            # update the scale for imshow
+            v_min = np.min(start_images[idx])
+            v_min = np.min([np.min(end_images[idx]),v_min])
+            v_min = np.min([np.min(true_mid_images[idx]),v_min])
+            v_min = np.min([np.min(gen_mid_images[idx]),v_min])
+
+            v_max = np.max(start_images[idx])
+            v_max = np.max([np.max(end_images[idx]),v_max])
+            v_max = np.max([np.max(true_mid_images[idx]),v_max])
+            v_max = np.max([np.max(gen_mid_images[idx]),v_max])
         	# row 0, 2 ... show start and end frames 
             axes[row, col].imshow(
                 start_images[idx],
                 cmap="gray",
-                vmin=-1,
-                vmax=-0.5058823529,
+                vmin=v_min,
+                vmax=v_max,
                 aspect="auto")
             axes[row, num_cols-1].axis("off")
             axes[row, num_cols-1].imshow(
                 end_images[idx],
                 cmap="gray",
-                vmin=-1,
-                vmax=-0.5058823529,
+                vmin=v_min,
+                vmax=v_max,
                 aspect="auto")
+            
 
         for col in range (1,num_cols-1):
             axes[row, col].axis("off")
@@ -89,16 +101,17 @@ def visualize_frames(start_frames, end_frames,
                 axes[row, col].imshow(
                     gen_mid_images[idx,col-1],
                     cmap="gray",
-                    vmin=-1,
-                    vmax=-0.5058823529,
+                    vmin=v_min,
+                    vmax=v_max,
                     aspect="auto")
+
             else:
             	# row 0, 2 ... show true frames
                 axes[row, col].imshow(
                     true_mid_images[idx,col-1],
                     cmap="gray",
-                    vmin=-1,
-                    vmax=-0.5058823529,
+                    vmin=v_min,
+                    vmax=-v_max,
                     aspect="auto")
 
 
