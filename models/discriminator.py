@@ -171,7 +171,8 @@ def fully_connected_layer(inputs, is_training=False,
          
 def build_discriminator(inputs, use_batch_norm=False,
                         is_training=False,
-                        starting_out_channels=8):
+                        starting_out_channels=8,
+                        is_verbose=False):
 
     N, N_IF, H, W, C = inputs.get_shape().as_list()
     # [N, N_IF, H, W, 1] -> [N, N_IF, H, W]
@@ -183,18 +184,19 @@ def build_discriminator(inputs, use_batch_norm=False,
         inputs,
         [0, 2, 3, 1])
 
+    print('Discriminator......')
     with tf.variable_scope('discriminator'):
         features, layer_dict = discriminator(
             inputs,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=True,
+            is_verbose=is_verbose,
             starting_out_channels=starting_out_channels)
 
         # [N, 3, 3, 128]
         features = fully_connected_layer(
             inputs,
             is_training=is_training,
-            is_verbose=True)
+            is_verbose=is_verbose)
 
     return features 

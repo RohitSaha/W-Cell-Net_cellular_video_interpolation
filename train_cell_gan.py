@@ -88,13 +88,15 @@ def training(args):
                 n_IF=args.n_IF,
                 starting_out_channels=args.starting_out_channels,
                 use_attention=args.use_attention,
-                spatial_attention=args.spatial_attention)
+                spatial_attention=args.spatial_attention,
+                is_verbose=True)
 
             train_discriminator_scores = discriminator.build_discriminator(
                 train_rec_iFrames,
                 use_batch_norm=True,
                 is_training=True,
-                starting_out_channels=args.discri_starting_out_channels)
+                starting_out_channels=args.discri_starting_out_channels,
+                is_verbose=True)
 
         with tf.variable_scope('cell_gan', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
@@ -106,13 +108,15 @@ def training(args):
                 is_training=False,
                 starting_out_channels=args.starting_out_channels,
                 use_attention=args.use_attention,
-                spatial_attention=args.spatial_attention)
+                spatial_attention=args.spatial_attention,
+                is_verbose=False)
 
             val_discriminator_scores = discriminator.build_discriminator(
                 val_rec_iFrames,
                 use_batch_norm=True,
                 is_training=False,
-                starting_out_channels=args.discri_starting_out_channels)
+                starting_out_channels=args.discri_starting_out_channels,
+                is_verbose=False)
       
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space

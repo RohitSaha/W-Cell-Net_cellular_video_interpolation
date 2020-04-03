@@ -134,7 +134,8 @@ def testing(model_path, args):
                     n_IF=n_IF,
                     starting_out_channels=out_channels,
                     use_attention=use_attention,
-                    spatial_attention=spatial_attention)
+                    spatial_attention=spatial_attention,
+                    is_verbose=True)
 
             elif model_name == 'unet':
                 test_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
@@ -145,7 +146,8 @@ def testing(model_path, args):
                     n_IF=n_IF,
                     starting_out_channels=out_channels,
                     use_attention=use_attention,
-                    spatial_attention=spatial_attention)
+                    spatial_attention=spatial_attention,
+                    is_verbose=True)
 
         print('Global parameters:{}'.format(
             count_parameters(tf.global_variables())))

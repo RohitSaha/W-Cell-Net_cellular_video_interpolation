@@ -89,7 +89,8 @@ def training(args):
                 n_IF=args.n_IF,
                 starting_out_channels=args.starting_out_channels,
                 use_attention=args.use_attention,
-                spatial_attention=args.spatial_attention)
+                spatial_attention=args.spatial_attention,
+                is_verbose=True)
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
@@ -101,7 +102,8 @@ def training(args):
                 is_training=False,
                 starting_out_channels=args.starting_out_channels,
                 use_attention=args.use_attention,
-                spatial_attention=args.spatial_attention)
+                spatial_attention=args.spatial_attention,
+                is_verbose=False)
             
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
