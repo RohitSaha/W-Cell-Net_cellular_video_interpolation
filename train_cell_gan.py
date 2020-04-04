@@ -208,19 +208,19 @@ def training(args):
             if 'discriminator' in var.name]
 
 
-
-
         # DEFINE OPTIMIZERS
         generator_optimizer = get_optimizer(
             generator_loss,
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
-            use_batch_norm=True)
+            use_batch_norm=True,
+            generator_vars)
         discriminator_optimizer = get_optimizer(
             discriminator_loss,
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
-            use_batch_norm=True)
+            use_batch_norm=True,
+            discriminator_vars)
 
         init_op = tf.group(
             tf.global_variables_initializer(),
