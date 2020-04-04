@@ -235,27 +235,35 @@ def training(args):
 
         # START TRAINING HERE
         for iteration in range(args.train_iters):
-            _, t_summ, t_loss = sess.run(
-                [optimizer, merged, total_train_loss])
+            disc_, td_loss = sess.run(
+                [discriminator_optimizer, train_discriminator_loss])
+            gene_, tg_loss = sess.run(
+                [generator_optimizer, train_generator_loss])
 
+            t_summ = sess.run(merged)
             train_writer.add_summary(t_summ, iteration)
-            print('Iter:{}/{}, Train Loss:{}'.format(
+
+            print('Iter:{}/{}, Disc. Loss:{}, Gen. Loss:{}'.format(
                 iteration,
                 args.train_iters,
-                t_loss))
+                td_loss,
+                tg_loss))
 
             if iteration % args.val_every == 0:
-                v_loss = sess.run(val_loss)
-                print('Iter:{}, Val Loss:{}'.format(
+                vd_loss, vg_loss = sess.run(
+                    [val_discriminator_loss, val_generator_loss)
+                print('Iter:{}, Val Disc. Loss:{}, Val Gen. Loss:{}'.format(
                     iteration,
-                    v_loss))
+                    vd_loss,
+                    vg_loss))
 
             if iteration % args.save_every == 0:
                 saver.save(
                     sess,
-                    CKPT_PATH + 'iter:{}_val:{}'.format(
+                    CKPT_PATH + 'iter:{}_valDisc:{}_valGen:{}'.format(
                         str(iteration),
-                        str(round(v_loss, 3))))
+                        str(round(vd_loss, 3)),
+                        str(roung(vg_loss, 3))))
 
             if iteration % args.plot_every == 0:
                 start_frames, end_frames, mid_frames,\
@@ -348,18 +356,6 @@ if __name__ == '__main__':
         help='To mention the number of samples in a batch')
 
     parser.add_argument(
-        '--loss',
-        type=str,
-        default='l2',
-        help='0:huber, 1:l2, 2:l1, 3:ssim')
-
-    parser.add_argument(
-        '--weight_decay',
-        type=float,
-        default=0.01,
-        help='To mention the strength of L2 weight decay')
-
-    parser.add_argument(
         '--perceptual_loss_weight',
         type=float,
         default=1.0,
@@ -424,21 +420,15 @@ if __name__ == '__main__':
     if args.optimizer == 'adam': args.optim_id = 1
     elif args.optimizer == 'sgd': args.optim_id = 2
 
-    if args.loss == 'huber': args.loss_id = 0
-    elif args.loss == 'l2': args.loss_id = 1
-    elif args.loss == 'l1': args.loss_id = 2
-    elif args.loss == 'ssim': args.loss_id = 3
-
     # ckpt_folder_name: model-name_iters_batch_size_\
-    # optimizer_lr_main-loss_starting-out-channels_\
+    # optimizer_lr_starting-out-channels_\
     # additional-losses_loss-reg
-    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_nIF-{}_startOutChannels-{}'.format(
+    args.ckpt_folder_name = '{}_{}_{}_{}_{}_nIF-{}_startOutChannels-{}'.format(
         args.model_name,
         str(args.train_iters),
         str(args.batch_size),
         args.optimizer,
         str(args.learning_rate),
-        args.loss,
         str(args.n_IF),
         str(args.starting_out_channels))
 
@@ -446,10 +436,6 @@ if __name__ == '__main__':
         args.ckpt_folder_name += '_perceptualLoss-{}-{}'.format(
             args.perceptual_loss_endpoint,
             str(args.perceptual_loss_weight))
-
-    if args.weight_decay:
-        args.ckpt_folder_name += '_ridgeWeightDecay-{}'.format(
-            str(args.weight_decay))
 
     if args.use_attention:
         if args.spatial_attention:

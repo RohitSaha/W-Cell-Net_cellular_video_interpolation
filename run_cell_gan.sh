@@ -10,12 +10,10 @@ python train_cell_gan.py --train_iters 100000 \
     --experiment_name $exp_name \
     --optimizer 'adam' \
     --learning_rate 1e-3 \
-    --batch_size 16 \
-    --loss 'l2' \
-    --weight_decay 0.0 \
-    --perceptual_loss_weight 0.001 \
+    --batch_size 32 \
+    --perceptual_loss_weight 0 \
     --perceptual_loss_endpoint 'conv5_3' \
-    --model_name 'skip_conn_separate_encoder_bipn' \
+    --model_name 'gan' \
     --starting_out_channels $out_channels \
     --n_IF $n_IF \
     --use_attention 1 \
