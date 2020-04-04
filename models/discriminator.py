@@ -1,9 +1,9 @@
 import tensorflow as tf
 
-from models.utils.layer import linear as MLP
-from models.utils.layer import conv_batchnorm_relu as CBR
-from models.utils.layer import upconv_2D as UC
-from models.utils.layer import maxpool as MxP
+from utils.layer import linear as MLP
+from utils.layer import conv_batchnorm_relu as CBR
+from utils.layer import upconv_2D as UC
+from utils.layer import maxpool as MxP
 
 def conv_block(inputs, block_name='block_1',
                 out_channels=16,
