@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-
 def linear(input_var, layer_name, output_units,
         activation=tf.keras.activations.relu,
         initializer=tf.keras.initializers.glorot_normal,

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import math as pymath
-from models.utils.losses import l2_loss
 
+from utils.losses import l2_loss
 
 def metric_repeat_fframe(fframes,mid_frames):
 	'''
