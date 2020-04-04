@@ -201,7 +201,7 @@ def training(args):
         generator_vars = [
             var
             for var in trainable_vars
-            if not 'discriminator' in var.name]
+            if 'generator' in var.name]
         discriminator_vars = [
             var
             for var in trainable_vars
@@ -214,13 +214,13 @@ def training(args):
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
             use_batch_norm=True,
-            generator_vars)
+            var_list=generator_vars)
         discriminator_optimizer = get_optimizer(
             discriminator_loss,
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
             use_batch_norm=True,
-            discriminator_vars)
+            var_list=discriminator_vars)
 
         init_op = tf.group(
             tf.global_variables_initializer(),
