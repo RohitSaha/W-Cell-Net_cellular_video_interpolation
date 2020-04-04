@@ -4,14 +4,15 @@ out_channels=$1
 n_IF=$2
 exp_name=$3
 python train_cell_gan.py --train_iters 100000 \
-    --disc_train_iters 10 \
+    --disc_train_iters 1 \
     --val_every 100 \
     --save_every 10000 \
     --plot_every 1000 \
     --experiment_name $exp_name \
     --optimizer 'adam' \
-    --learning_rate 1e-3 \
+    --learning_rate 0.0003 \
     --batch_size 32 \
+    --reconstruction_loss_weight 0.01 \
     --perceptual_loss_weight 0 \
     --perceptual_loss_endpoint 'conv5_3' \
     --model_name 'gan' \

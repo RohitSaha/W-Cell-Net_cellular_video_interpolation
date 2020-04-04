@@ -171,7 +171,7 @@ def training(args):
             tf.square(
                 train_fake_output_discriminator - 1)) / args.batch_size
         train_reconstruction_loss = l2_loss(
-            train_rec_iFrames, train_iFrames)
+            train_rec_iFrames, train_iFrames) * args.reconstruction_loss_weight
         train_generator_loss = train_generator_fake_loss + train_reconstruction_loss
 
         val_discri_real_loss = tf.reduce_sum(
@@ -186,7 +186,7 @@ def training(args):
             tf.square(
                 val_fake_output_discriminator - 1)) / args.batch_size
         val_reconstruction_loss = l2_loss(
-            val_rec_iFrames, val_iFrames)
+            val_rec_iFrames, val_iFrames) * args.reconstruction_loss_weight
         val_generator_loss = val_generator_fake_loss + val_reconstruction_loss
 
         # SUMMARIES
@@ -230,7 +230,7 @@ def training(args):
         discriminator_optimizer = get_optimizer(
             train_discriminator_loss,
             optim_id=args.optim_id,
-            learning_rate=args.learning_rate,
+            learning_rate=args.learning_rate * 2.,
             use_batch_norm=True,
             var_list=discriminator_vars)
 
@@ -376,6 +376,12 @@ if __name__ == '__main__':
         help='To mention the number of samples in a batch')
 
     parser.add_argument(
+        '--reconstruction_loss_weight',
+        type=float,
+        default=0.01,
+        help='Mention strength of reconstruction loss')
+
+    parser.add_argument(
         '--perceptual_loss_weight',
         type=float,
         default=1.0,
@@ -443,14 +449,18 @@ if __name__ == '__main__':
     # ckpt_folder_name: model-name_iters_batch_size_\
     # optimizer_lr_starting-out-channels_\
     # additional-losses_loss-reg
-    args.ckpt_folder_name = '{}_{}_{}_{}_{}_nIF-{}_startOutChannels-{}'.format(
+    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_nIF-{}_startOutChannels-{}'.format(
         args.model_name,
         str(args.train_iters),
+        str(args.disc_train_iters),
         str(args.batch_size),
         args.optimizer,
         str(args.learning_rate),
         str(args.n_IF),
         str(args.starting_out_channels))
+
+    args.ckpt_folder_name += '_reconstruction-weight-{}'.format(
+        str(args.reconstruction_loss_weight))
 
     if args.perceptual_loss_weight:
         args.ckpt_folder_name += '_perceptualLoss-{}-{}'.format(
