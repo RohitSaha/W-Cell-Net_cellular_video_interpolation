@@ -200,7 +200,7 @@ def training(args):
             coord=coord)
 
         # START TRAINING HERE
-        for iteration in range(args.train_iters):
+        for iteration in range(args.train_iters + 1):
             _, t_summ, t_loss = sess.run(
                 [optimizer, merged, total_train_loss])
 

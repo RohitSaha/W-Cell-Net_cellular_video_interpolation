@@ -78,8 +78,8 @@ def training(args):
         val_iFrames = gaussian_filter(val_iFrames, std=std_dev)
         '''
 
-        with tf.variable_scope('cell_gan'):
-            print('TRAIN FRAMES (first):')
+        # TRAINABLE
+        with tf.variable_scope('generator'):
             train_rec_iFrames = generator_unet.build_generator(
                 train_fFrames,
                 train_lFrames,
@@ -91,20 +91,23 @@ def training(args):
                 spatial_attention=args.spatial_attention,
                 is_verbose=True)
 
-            # concatenate generated frames and real frames
-            train_discriminator_inputs = tf.concat(
-                [train_iFrames, train_rec_iFrames],
-                axis=0)
-
-            train_discriminator_scores = discriminator.build_discriminator(
-                train_discriminator_inputs,
+        with tf.variable_scope('discriminator'):
+            train_real_output_discriminator = discriminator.build_discriminator(
+                train_iFrames,
+                use_batch_norm=True,
+                is_training=True,
+                starting_out_channels=args.discri_starting_out_channels,
+                is_verbose=True)
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            train_fake_output_discriminator = discriminator.build_discriminator(
+                train_rec_iFrames,
                 use_batch_norm=True,
                 is_training=True,
                 starting_out_channels=args.discri_starting_out_channels,
                 is_verbose=True)
 
-        with tf.variable_scope('cell_gan', reuse=tf.AUTO_REUSE):
-            print('VAL FRAMES (first):')
+        # VALIDATION
+        with tf.variable_scope('generator', reuse=tf.AUTO_REUSE):
             val_rec_iFrames = generator_unet.build_generator(
                 val_fFrames,
                 val_lFrames,
@@ -116,17 +119,21 @@ def training(args):
                 spatial_attention=args.spatial_attention,
                 is_verbose=False)
 
-            # concatenate generated frames and real frames
-            val_discriminator_inputs = tf.concat(
-                [val_iFrames, val_rec_iFrames],
-                axis=0)
-
-            val_discriminator_scores = discriminator.build_discriminator(
-                val_discriminator_inputs,
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            val_real_output_discriminator = discriminator.build_discriminator(
+                val_iFrames,
                 use_batch_norm=True,
                 is_training=False,
                 starting_out_channels=args.discri_starting_out_channels,
                 is_verbose=False)
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            val_fake_output_discriminator = discriminator.build_discriminator(
+                val_rec_iFrames,
+                use_batch_norm=True,
+                is_training=False,
+                starting_out_channels=args.discri_starting_out_channels,
+                is_verbose=False)
+
       
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
@@ -145,6 +152,50 @@ def training(args):
             count_parameters(tf.trainable_variables())))
 
         # DEFINE GAN losses:
+        train_discri_real_loss = -tf.reduce_mean(
+            tf.log(train_real_output_discriminator + 1e-4))
+        train_discri_fake_loss = tf.reduce_mean(
+            tf.log(1. - train_fake_output_discriminator + 1e-4))
+        train_discriminator_loss = train_discri_real_loss + train_discri_fake_loss
+
+        train_generator_fake_loss = -tf.reduce_mean(
+            tf.log(train_fake_output_discriminator + 1e-4))
+        train_reconstruction_loss = l2_loss(
+            train_rec_iFrames, train_iFrames)
+        train_generator_loss = train_generator_fake_loss + train_reconstruction_loss
+
+        val_discri_real_loss = -tf.reduce_mean(
+            tf.log(val_real_output_discriminator + 1e-4))
+        val_discri_fake_loss = tf.reduce_mean(
+            tf.log(1. - val_fake_output_discriminator + 1e-4))
+        val_discriminator_loss = val_discri_real_loss + val_discri_fake_loss
+
+        val_generator_fake_loss = -tf.reduce_mean(
+            tf.log(val_fake_output_discriminator + 1e-4))
+        val_reconstruction_loss = l2_loss(
+            val_rec_iFrames, val_iFrames)
+        val_generator_loss = val_generator_fake_loss + val_reconstruction_loss
+
+        # SUMMARIES
+        tf.summary.scalar('train_discri_real_loss', train_discri_real_loss)
+        tf.summary.scalar('train_discri_fake_loss', train_discri_fake_loss)
+        tf.summary.scalar('train_discriminator_loss', train_discriminator_loss)
+        tf.summary.scalar('train_generator_fake_loss', train_generator_fake_loss)
+        tf.summary.scalar('train_reconstruction_loss', train_reconstruction_loss)
+        tf.summary.scalar('train_generator_loss', train_generator_loss)
+
+        tf.summary.scalar('val_discri_real_loss', val_discri_real_loss)
+        tf.summary.scalar('val_discri_fake_loss', val_discri_fake_loss)
+        tf.summary.scalar('val_discriminator_loss', val_discriminator_loss)
+        tf.summary.scalar('val_generator_fake_loss', val_generator_fake_loss)
+        tf.summary.scalar('val_reconstruction_loss', val_reconstruction_loss)
+        tf.summary.scalar('val_generator_loss', val_generator_loss)       
+
+        merged = tf.summary.merge_all()
+        train_writer = tf.summary.FileWriter(
+            CKPT_PATH + 'train',
+            sess.graph)
+
         # get variables responsible for generator and discriminator
         trainable_vars = tf.trainable_variables()
         generator_vars = [
@@ -157,65 +208,7 @@ def training(args):
             if 'discriminator' in var.name]
 
 
-        # DEFINE METRICS
-        if args.loss_id == 0:
-            train_loss = huber_loss(
-                train_iFrames, train_rec_iFrames,
-                delta=1.)
-            val_loss = huber_loss(
-                val_iFrames, val_rec_iFrames,
-                delta=1.)
 
-        elif args.loss_id == 1:
-            train_loss = l2_loss(
-                train_iFrames, train_rec_iFrames)
-            val_loss = l2_loss(
-                val_iFrames, val_rec_iFrames) 
-
-        elif args.loss_id == 2:
-            train_loss = l1_loss(
-                train_iFrames, train_rec_iFrames)
-            val_loss = l1_loss(
-                val_iFrames, val_rec_iFrames)
-
-        elif args.loss_id == 3:
-            train_loss = ssim_loss(
-                train_rec_iFrames, train_iFrames)
-            val_loss = ssim_loss(
-                val_rec_iFrames, val_iFrames)
-
-        total_train_loss = train_loss
-        tf.summary.scalar('train_main_loss', train_loss)
-        tf.summary.scalar('total_val_loss', val_loss)
-
-        if args.perceptual_loss_weight:
-            train_perceptual_loss = perceptual_loss(
-                train_iFrames_features,
-                train_rec_iFrames_features)
-
-            tf.summary.scalar('train_perceptual_loss',\
-                train_perceptual_loss)
-
-            total_train_loss += train_perceptual_loss\
-                * args.perceptual_loss_weight
-
-        if args.weight_decay:
-            decay_loss = ridge_weight_decay(
-                tf.trainable_variables())
-
-            tf.summary.scalar('ridge_l2_weight_decay',\
-                decay_loss)
-
-            total_train_loss += decay_loss\
-                * args.weight_decay 
-
-        # SUMMARIES
-        tf.summary.scalar('total_train_loss',\
-            total_train_loss)
-        merged = tf.summary.merge_all()
-        train_writer = tf.summary.FileWriter(
-            CKPT_PATH + 'train',
-            sess.graph)
 
         # DEFINE OPTIMIZERS
         generator_optimizer = get_optimizer(
@@ -419,6 +412,12 @@ if __name__ == '__main__':
         type=int,
         default=0,
         help='Specifies whether to use spatial/channel attention')
+
+    parser.add_argument(
+        '--discri_starting_out_channels',
+        type=int,
+        default=8,
+        help='Specifies the number of channels in first conv layer of discriminator')
 
     args = parser.parse_args()
 

@@ -163,6 +163,8 @@ def fully_connected_layer(inputs, is_training=False,
         batch_norm=False,
         is_training=is_training)
 
+    net = tf.keras.activations.sigmoid(net)
+
     if is_verbose: print('MLP_1:{}'.format(net))
     # [N, 1]
 
