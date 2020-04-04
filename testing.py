@@ -11,14 +11,15 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
-from models.utils.optimizer import count_parameters
-from models.utils.losses import huber_loss
-from models.utils.losses import l2_loss
-from models.utils.visualizer import visualize_frames
-from models.utils.metrics import metric_repeat_fframe
-from models.utils.metrics import metric_repeat_lframe
-from models.utils.metrics import metric_weighted_frame
-from models.utils.metrics import metric_interpolated_frame
+
+from utils.optimizer import count_parameters
+from utils.losses import huber_loss
+from utils.losses import l2_loss
+from utils.visualizer import visualize_frames
+from utils.metrics import metric_repeat_fframe
+from utils.metrics import metric_repeat_lframe
+from utils.metrics import metric_weighted_frame
+from utils.metrics import metric_interpolated_frame
 
 from models import skip_separate_encoder_bipn
 from models import skip_unet_separate_encoder_bipn

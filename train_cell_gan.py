@@ -12,15 +12,16 @@ from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
 from data_pipeline.tf_augmentations import gaussian_filter 
-from models.utils.optimizer import get_optimizer
-from models.utils.optimizer import count_parameters
-from models.utils.losses import huber_loss
-from models.utils.losses import l2_loss
-from models.utils.losses import l1_loss
-from models.utils.losses import ssim_loss
-from models.utils.losses import ridge_weight_decay
-from models.utils.losses import perceptual_loss
-from models.utils.visualizer import visualize_frames
+
+from utils.optimizer import get_optimizer
+from utils.optimizer import count_parameters
+from utils.losses import huber_loss
+from utils.losses import l2_loss
+from utils.losses import l1_loss
+from utils.losses import ssim_loss
+from utils.losses import ridge_weight_decay
+from utils.losses import perceptual_loss
+from utils.visualizer import visualize_frames
 
 from models import discriminator
 from models import generator_unet 

@@ -12,12 +12,13 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.WARN)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
-from models.utils.optimizer import get_optimizer
-from models.utils.optimizer import count_parameters
-from models.utils.losses import huber_loss
-from models.utils.losses import l2_loss
-from models.utils.losses import perceptual_loss
-from models.utils.visualizer import visualize_frames
+
+from utils.optimizer import get_optimizer
+from utils.optimizer import count_parameters
+from utils.losses import huber_loss
+from utils.losses import l2_loss
+from utils.losses import perceptual_loss
+from utils.visualizer import visualize_frames
 
 from models import bipn
 from models import vgg16
