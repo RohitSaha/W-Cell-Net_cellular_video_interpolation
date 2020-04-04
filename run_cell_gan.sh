@@ -12,7 +12,7 @@ python train_cell_gan.py --train_iters 100000 \
     --optimizer 'adam' \
     --learning_rate 0.0003 \
     --batch_size 32 \
-    --reconstruction_loss_weight 0.01 \
+    --reconstruction_loss_weight 1.0 \
     --perceptual_loss_weight 0 \
     --perceptual_loss_endpoint 'conv5_3' \
     --model_name 'gan' \
@@ -22,4 +22,4 @@ python train_cell_gan.py --train_iters 100000 \
     --spatial_attention 1 \
     --additional_info 'vminVmax' \
     --discri_starting_out_channels 8 \
-    --debug 1
+    --debug 0

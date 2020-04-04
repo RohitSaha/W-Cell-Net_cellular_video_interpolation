@@ -32,8 +32,8 @@ std_dev = 1
 def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
-    ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
-    # ROOT_DIR = '/media/data/movie/dataset/tf_records'
+    # ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    ROOT_DIR = '/media/data/movie/dataset/tf_records'
     TRAIN_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
@@ -267,9 +267,9 @@ def training(args):
             print('Iter:{}/{}, Disc. Loss:{}, Gen. Loss:{}, Rec. Loss:{}'.format(
                 iteration,
                 args.train_iters,
-                round(td_loss, 6),
-                round(tgf_loss, 6),
-                round(tr_loss, 6)))
+                str(round(td_loss, 6)),
+                str(round(tgf_loss, 6)),
+                str(round(tr_loss, 6))))
 
             if iteration % args.val_every == 0:
                 vd_loss, vgf_loss, vr_loss = sess.run(
@@ -277,17 +277,18 @@ def training(args):
                         val_reconstruction_loss])
                 print('Iter:{}, VAL Disc. Loss:{}, Gen. Loss:{}, Rec. Loss:{}'.format(
                     iteration,
-                    round(vd_loss, 6),
-                    round(vgf_loss, 6),
-                    round(vr_loss, 6)))
+                    str(round(vd_loss, 6)),
+                    str(round(vgf_loss, 6)),
+                    str(round(vr_loss, 6))))
 
             if iteration % args.save_every == 0:
                 saver.save(
                     sess,
-                    CKPT_PATH + 'iter:{}_valDisc:{}_valGen:{}'.format(
+                    CKPT_PATH + 'iter:{}_valDisc:{}_valGen:{}_valRec:{}'.format(
                         str(iteration),
                         str(round(vd_loss, 6)),
-                        str(round(vgf_loss, 6))))
+                        str(round(vgf_loss, 6)),
+                        str(round(vr_loss, 6))))
 
             if iteration % args.plot_every == 0:
                 start_frames, end_frames, mid_frames,\
