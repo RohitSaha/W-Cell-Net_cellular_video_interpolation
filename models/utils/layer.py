@@ -18,7 +18,7 @@ def linear(input_var, layer_name, output_units,
             "w", 
             [shape[-1], output_units],
             tf.float32,
-            initializer=initalizer)
+            initializer=initializer)
 
         output_var = tf.matmul(
             input_var,
@@ -28,7 +28,7 @@ def linear(input_var, layer_name, output_units,
             bias_var = tf.get_variable(
                 "b",
                 [output_units],
-                initializer=tf.constant_initalizer(0.0))
+                initializer=initializer)
 
             output_var = tf.nn.bias_add(
                 output_var,

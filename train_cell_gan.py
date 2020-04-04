@@ -31,8 +31,8 @@ std_dev = 1
 def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
-    # ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
-    ROOT_DIR = '/media/data/movie/dataset/tf_records'
+    ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    # ROOT_DIR = '/media/data/movie/dataset/tf_records'
     TRAIN_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
@@ -79,6 +79,9 @@ def training(args):
         '''
 
         # TRAINABLE
+        print('---------------------------------------------')
+        print('----------------- GENERATOR -----------------')
+        print('---------------------------------------------')
         with tf.variable_scope('generator'):
             train_rec_iFrames = generator_unet.build_generator(
                 train_fFrames,
@@ -91,6 +94,10 @@ def training(args):
                 spatial_attention=args.spatial_attention,
                 is_verbose=True)
 
+        print('---------------------------------------------')
+        print('-------------- DISCRIMINATOR ----------------')
+        print('---------------------------------------------')
+        # discriminator for classifying real images
         with tf.variable_scope('discriminator'):
             train_real_output_discriminator = discriminator.build_discriminator(
                 train_iFrames,
@@ -98,13 +105,14 @@ def training(args):
                 is_training=True,
                 starting_out_channels=args.discri_starting_out_channels,
                 is_verbose=True)
+        # discriminator for classifying fake images
         with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
             train_fake_output_discriminator = discriminator.build_discriminator(
                 train_rec_iFrames,
                 use_batch_norm=True,
                 is_training=True,
                 starting_out_channels=args.discri_starting_out_channels,
-                is_verbose=True)
+                is_verbose=False)
 
         # VALIDATION
         with tf.variable_scope('generator', reuse=tf.AUTO_REUSE):
@@ -134,7 +142,6 @@ def training(args):
                 starting_out_channels=args.discri_starting_out_channels,
                 is_verbose=False)
 
-      
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
             with tf.variable_scope('vgg16'):
@@ -152,26 +159,32 @@ def training(args):
             count_parameters(tf.trainable_variables())))
 
         # DEFINE GAN losses:
-        train_discri_real_loss = -tf.reduce_mean(
-            tf.log(train_real_output_discriminator + 1e-4))
-        train_discri_fake_loss = tf.reduce_mean(
-            tf.log(1. - train_fake_output_discriminator + 1e-4))
+        train_discri_real_loss = tf.reduce_sum(
+            tf.square(
+                train_real_output_discriminator - 1)) / (2 * args.batch_size)
+        train_discri_fake_loss = tf.reduce_sum(
+            tf.square(
+                train_fake_output_discriminator)) / (2 * args.batch_size)
         train_discriminator_loss = train_discri_real_loss + train_discri_fake_loss
 
-        train_generator_fake_loss = -tf.reduce_mean(
-            tf.log(train_fake_output_discriminator + 1e-4))
+        train_generator_fake_loss = tf.reduce_sum(
+            tf.square(
+                train_fake_output_discriminator - 1)) / args.batch_size
         train_reconstruction_loss = l2_loss(
             train_rec_iFrames, train_iFrames)
         train_generator_loss = train_generator_fake_loss + train_reconstruction_loss
 
-        val_discri_real_loss = -tf.reduce_mean(
-            tf.log(val_real_output_discriminator + 1e-4))
-        val_discri_fake_loss = tf.reduce_mean(
-            tf.log(1. - val_fake_output_discriminator + 1e-4))
+        val_discri_real_loss = tf.reduce_sum(
+            tf.square(
+                val_real_output_discriminator - 1)) / (2 * args.batch_size)
+        val_discri_fake_loss = tf.reduce_sum(
+            tf.square(
+                val_fake_output_discriminator)) / (2 * args.batch_size)
         val_discriminator_loss = val_discri_real_loss + val_discri_fake_loss
 
-        val_generator_fake_loss = -tf.reduce_mean(
-            tf.log(val_fake_output_discriminator + 1e-4))
+        val_generator_fake_loss = tf.reduce_sum(
+            tf.square(
+                val_fake_output_discriminator - 1)) / args.batch_size
         val_reconstruction_loss = l2_loss(
             val_rec_iFrames, val_iFrames)
         val_generator_loss = val_generator_fake_loss + val_reconstruction_loss
@@ -207,16 +220,15 @@ def training(args):
             for var in trainable_vars
             if 'discriminator' in var.name]
 
-
         # DEFINE OPTIMIZERS
         generator_optimizer = get_optimizer(
-            generator_loss,
+            train_generator_loss,
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
             use_batch_norm=True,
             var_list=generator_vars)
         discriminator_optimizer = get_optimizer(
-            discriminator_loss,
+            train_discriminator_loss,
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
             use_batch_norm=True,
@@ -235,12 +247,14 @@ def training(args):
 
         # START TRAINING HERE
         for iteration in range(args.train_iters):
-            disc_, td_loss = sess.run(
-                [discriminator_optimizer, train_discriminator_loss])
-            gene_, tg_loss = sess.run(
-                [generator_optimizer, train_generator_loss])
 
-            t_summ = sess.run(merged)
+            for d_iteration in range(args.disc_train_iters):
+                disc_, td_loss = sess.run(
+                    [discriminator_optimizer, train_discriminator_loss])
+
+            gene_, tg_loss, t_summ = sess.run(
+                [generator_optimizer, train_generator_loss, merged])
+
             train_writer.add_summary(t_summ, iteration)
 
             print('Iter:{}/{}, Disc. Loss:{}, Gen. Loss:{}'.format(
@@ -251,7 +265,7 @@ def training(args):
 
             if iteration % args.val_every == 0:
                 vd_loss, vg_loss = sess.run(
-                    [val_discriminator_loss, val_generator_loss)
+                    [val_discriminator_loss, val_generator_loss])
                 print('Iter:{}, Val Disc. Loss:{}, Val Gen. Loss:{}'.format(
                     iteration,
                     vd_loss,
@@ -263,7 +277,7 @@ def training(args):
                     CKPT_PATH + 'iter:{}_valDisc:{}_valGen:{}'.format(
                         str(iteration),
                         str(round(vd_loss, 3)),
-                        str(roung(vg_loss, 3))))
+                        str(round(vg_loss, 3))))
 
             if iteration % args.plot_every == 0:
                 start_frames, end_frames, mid_frames,\
@@ -312,6 +326,12 @@ if __name__ == '__main__':
         type=int,
         default=15000,
         help='Mention the number of training iterations')
+
+    parser.add_argument(
+        '--disc_train_iters',
+        type=int,
+        default=1,
+        help='Mention the number of nested iterations for discriminator')
 
     parser.add_argument(
         '--val_every',
