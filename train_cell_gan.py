@@ -189,6 +189,11 @@ def training(args):
             val_rec_iFrames, val_iFrames) * args.reconstruction_loss_weight
         val_generator_loss = val_generator_fake_loss + val_reconstruction_loss
 
+        if args.perceptual_loss_weight:
+            train_percp_loss = perceptual_loss(
+                train_rec_iFrames_features, train_iFrames_features)
+            train_generator_loss += args.perceptual_loss_weight * train_percp_loss
+
         # SUMMARIES
         tf.summary.scalar('train_discri_real_loss', train_discri_real_loss)
         tf.summary.scalar('train_discri_fake_loss', train_discri_fake_loss)
@@ -252,32 +257,36 @@ def training(args):
                 disc_, td_loss = sess.run(
                     [discriminator_optimizer, train_discriminator_loss])
 
-            gene_, tg_loss, t_summ = sess.run(
-                [generator_optimizer, train_generator_loss, merged])
+            gene_, tgf_loss, tr_loss, t_summ = sess.run(
+                [generator_optimizer, train_generator_fake_loss,\
+                    train_reconstruction_loss, merged])
 
             train_writer.add_summary(t_summ, iteration)
 
-            print('Iter:{}/{}, Disc. Loss:{}, Gen. Loss:{}'.format(
+            print('Iter:{}/{}, Disc. Loss:{}, Gen. Loss:{}, Rec. Loss:{}'.format(
                 iteration,
                 args.train_iters,
-                td_loss,
-                tg_loss))
+                round(td_loss, 6),
+                round(tgf_loss, 6),
+                round(tr_loss, 6)))
 
             if iteration % args.val_every == 0:
-                vd_loss, vg_loss = sess.run(
-                    [val_discriminator_loss, val_generator_loss])
-                print('Iter:{}, Val Disc. Loss:{}, Val Gen. Loss:{}'.format(
+                vd_loss, vgf_loss, vr_loss = sess.run(
+                    [val_discriminator_loss, val_generator_fake_loss,\
+                        val_reconstruction_loss])
+                print('Iter:{}, VAL Disc. Loss:{}, Gen. Loss:{}, Rec. Loss:{}'.format(
                     iteration,
-                    vd_loss,
-                    vg_loss))
+                    round(vd_loss, 6),
+                    round(vgf_loss, 6),
+                    round(vr_loss, 6)))
 
             if iteration % args.save_every == 0:
                 saver.save(
                     sess,
                     CKPT_PATH + 'iter:{}_valDisc:{}_valGen:{}'.format(
                         str(iteration),
-                        str(round(vd_loss, 3)),
-                        str(round(vg_loss, 3))))
+                        str(round(vd_loss, 6)),
+                        str(round(vgf_loss, 6))))
 
             if iteration % args.plot_every == 0:
                 start_frames, end_frames, mid_frames,\
