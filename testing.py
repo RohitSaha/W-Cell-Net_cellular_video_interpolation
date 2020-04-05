@@ -28,19 +28,26 @@ from models import vgg16
 
 def testing(info):
     
-    # Get the latest checkpoint path
+    # Get the best checkpoint path
     weight_path = os.listdir(
         info['model_path'])
 
-    weight_path = [
+    weight_paths = [
         i
         for i in weight_path
-        if '99000' in i and 'meta' in i][0]
+        if 'meta' in i]
+    di_weight = {}
+    for path in weight_paths:
+        di_weight[path] = int(path.split(':')[-1].split('.')[0])
+    di_weight = {
+        k: v
+        for k, v in sorted(di_weight.items(), key=lambda item: item[1])}
+    weight_path = [*di_weight][0]
+
     weight_path = weight_path[:-5]
     weight_path = os.path.join(
         info['model_path'],
         weight_path)
-    
 
     n_IF = info['n_IF']
     batch_size = info['batch_size']
@@ -212,26 +219,46 @@ def testing(info):
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(
+        description='params of running an experiment')
+
+    parser.add_argument(
+        '--window_size',
+        default=5,
+        type=int,
+        help='Mention the window size to be used')
+
+    parser.add_argument(
+        '--out_channels',
+        default=8,
+        type=int,
+        help='Mention the out channels of first conv layer')
+
+    args = parser.parse_args()
+
     ROOT_DIR = '/media/data/movie/dataset/tf_records/'
     exp_name = 'slack_20px_fluorescent_window_{}/'
     model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_startOutChannels-{}'
     
     info = {}
-    for window_size in [5, 6, 7, 8, 9]:
-        for out_channels in [8, 16, 32]:
-            exp_name = exp_name.format(str(window_size))
-            model = model.format(str(out_channels))
-            info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
-            info['model_name'] = 'unet'
-            info['batch_size'] = 32
-            info['loss'] = 'l2'
-            info['n_IF'] = window_size - 2
-            info['out_channels'] = out_channels
-            info['attention'] = 0
-            info['use_spatial_attention'] = 1
-            info['TEST_REC_PATH'] = os.path.join(ROOT_DIR, exp_name, 'test.tfrecords')
 
-            testing(info)
+    window_size = args.window_size
+    out_channels = args.out_channels
+
+    exp_name = exp_name.format(str(window_size))
+    model = model.format(str(out_channels))
+
+    info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
+    info['model_name'] = 'unet'
+    info['batch_size'] = 32
+    info['loss'] = 'l2'
+    info['n_IF'] = window_size - 2
+    info['out_channels'] = out_channels
+    info['attention'] = 0
+    info['use_spatial_attention'] = 1
+    info['TEST_REC_PATH'] = os.path.join(ROOT_DIR, exp_name, 'test.tfrecords')
+
+    testing(info)
 
 # LEGACY CODE:
 def control(args):
