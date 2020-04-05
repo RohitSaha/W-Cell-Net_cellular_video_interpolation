@@ -20,6 +20,6 @@ python train_cell_gan.py --train_iters 100000 \
     --n_IF $n_IF \
     --use_attention 0 \
     --spatial_attention 1 \
-    --additional_info 'vminVmax' \
+    --additional_info 'l1-recLoss_vminVmax' \
     --discri_starting_out_channels 8 \
     --debug 0
