@@ -2,6 +2,7 @@ import os
 import pickle
 import numpy as np
 import argparse
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -122,7 +123,8 @@ def testing(model_path, args):
                 filename_queue=test_queue,
                 is_training=False,
                 batch_size=args.batch_size,
-                n_intermediate_frames=n_IF)
+                n_intermediate_frames=n_IF,
+                all_smaller_final_batch=True)
 
         with tf.variable_scope('separate_bipn'):
             print('TEST FRAMES (first):')
@@ -199,7 +201,7 @@ def testing(model_path, args):
         metrics['inter_frames'] = []
 
         # START TRAINING HERE
-        for iteration in range(test_iters):
+        for iteration in range(test_iters + 1):
 
             # get frames and metrics
             start_frames, end_frames, mid_frames, rec_mid_frames,\
@@ -208,10 +210,11 @@ def testing(model_path, args):
                 repeat_fFrame, repeat_lFrame, weighted_frame,\
                     inter_frame])
 
-            metrics['repeat_first'].append(repeat_first)
-            metrics['repeat_last'].append(repeat_last)
-            metrics['weighted_frames'].append(weighted)
-            metrics['inter_frames'].append(true_metric)
+            samples = start_frames.shape[0]
+            metrics['repeat_first'].append(repeat_first * samples)
+            metrics['repeat_last'].append(repeat_last * samples)
+            metrics['weighted_frames'].append(weighted * samples)
+            metrics['inter_frames'].append(true_metric * samples)
 
             visualize_frames(
                 start_frames,
@@ -230,13 +233,18 @@ def testing(model_path, args):
             pickle.dump(metrics, handle)
         print('Pickle file dumped.....')
 
-    return metrics
+    return metrics, test_samples 
 
 
 def control(args):
 
     # get runnable files
     runnables = get_files()
+    print('Experiments to run:')
+    for runnable in runnables:
+        print(runnable)
+    import ipdb; ipdb.set_trace()
+
     master_metrics = {}
     best_rf = float('inf')
     best_rl = float('inf')
@@ -244,7 +252,7 @@ def control(args):
     best_if = float('inf')
 
     for model_path_id in range(len(runnables)):
-        metrics = testing(
+        metrics, test_samples = testing(
             runnable[model_path_id],
             args)        
 
@@ -253,10 +261,10 @@ def control(args):
         weight_frames = metrics['weighted_frames']
         inter_frames = metrics['inter_frames']
     
-        mean_rf = sum(rep_first) / len(rep_first)
-        mean_rl = sum(rep_last) / len(rep_last)
-        mean_wf = sum(weight_frames) / len(weight_frames)
-        mean_if = sum(inter_frames) / len(inter_frames)
+        mean_rf = sum(rep_first) / test_samples
+        mean_rl = sum(rep_last) / test_samples
+        mean_wf = sum(weight_frames) / test_samples
+        mean_if = sum(inter_frames) / test_samples
 
         master_metrics[runnable[model_path_id]] = [
             mean_rf, mean_rl, mean_wf, mean_if]
