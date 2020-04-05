@@ -26,89 +26,42 @@ from models import skip_separate_encoder_bipn
 from models import skip_unet_separate_encoder_bipn
 from models import vgg16
 
-
-
-def get_files():
-    ROOT_DIR = '/media/data/movie/dataset/tf_records/'
-    runnable = []
-    experiments = os.listdir(ROOT_DIR)
-    for exp in experiments:
-        models = os.listdir(ROOT_DIR + exp + '/')
-
-        for model in models:
-            if not model.endswith('pkl') and\
-                not model.endswith('tfrecords'):
-
-                model_path = os.path.join(
-                    ROOT_DIR,
-                    exp + '/',
-                    model)
-
-                if not os.path.exists(model_path +\
-                    'evaluation.pkl'):
-                    runnable.append(model_path)
-                
-    return runnable
-
-
-def get_model_details(model_path):
-    model = model_path.split('/')[-1]
-    details = model.split('_')
-
-    model_name = details[0]
-    try:
-        loss_index = details.index('l2')
-    except:
-        loss_index = details.index('l1')
-    
-    loss = details[loss_index]
-    nIF = int(details[loss_index + 1][-1])
-    out_channels = int(details[loss_index + 2].split(
-        '-')[-1])
-    attention = details[loss_index + 3]
-    additional_info = details[-1]
-
-    return model_name, loss, nIF, out_channels,\
-        attention, additional_info
-            
-
-def testing(model_path, args):
-    
-    splits = model_path.split('/')[:-1]
-    TEST_REC_PATH = os.path.join(
-        '/'.join(splits), 
-        'test.tfrecords')
+def testing(info):
     
     # Get the latest checkpoint path
-    weight_path = os.listdir(model_path)
+    weight_path = os.listdir(
+        info['model_path'])
+
     weight_path = [
         i
         for i in weight_path
         if '99000' in i and 'meta' in i][0]
     weight_path = weight_path[:-5]
     weight_path = os.path.join(
-        model_path,
+        info['model_path'],
         weight_path)
     
-    # get model details
-    model_name, loss, nIF, out_channels, attention,\
-        additional_info = get_model_details(
-            model_path)
 
+    n_IF = info['n_IF']
+    batch_size = info['batch_size']
     # get #test_samples based on experiment
     if n_IF == 3: test_samples = 18300
     elif n_IF == 4: test_samples = 18296
     elif n_IF == 5: test_samples = 18265
     elif n_IF == 6: test_samples = 18235
     elif n_IF == 7: test_samples = 18204
-    test_iters = test_samples // args.batch_size
+    test_iters = test_samples // batch_size
+    test_samples = test_samples - (test_samples % batch_size)
 
     # get attention
-    if attention == 'spatialAttention':
+    if info['attention']:
         use_attention = 1
-        spatial_attention = 1
-    elif attention == 'channelAttention':
-        use_attention = 1
+        if info['use_spatial_attention']:
+            spatial_attention = 1
+        else:
+            spatial_attention = 0
+    else:
+        use_attention = 0
         spatial_attention = 0
 
     # SCOPING BEGINS HERE
@@ -117,40 +70,40 @@ def testing(model_path, args):
         global_step = tf.train.get_global_step()
 
         test_queue = tf.train.string_input_producer(
-            [TEST_REC_PATH], num_epochs=1)
+            [info['TEST_REC_PATH']], num_epochs=1)
         test_fFrames, test_lFrames, test_iFrames, test_mfn =\
             read_and_decode(
                 filename_queue=test_queue,
                 is_training=False,
-                batch_size=args.batch_size,
+                batch_size=batch_size,
                 n_intermediate_frames=n_IF,
-                all_smaller_final_batch=True)
+                allow_smaller_final_batch=False)
 
         with tf.variable_scope('separate_bipn'):
             print('TEST FRAMES (first):')
-            if model_name == 'skip':
+            if info['model_name'] == 'skip':
                 test_rec_iFrames = skip_separate_encoder_bipn.build_bipn(
                     test_fFrames,
                     test_lFrames,
                     use_batch_norm=True,
                     is_training=False,
                     n_IF=n_IF,
-                    starting_out_channels=out_channels,
+                    starting_out_channels=info['out_channels'],
                     use_attention=use_attention,
                     spatial_attention=spatial_attention,
-                    is_verbose=True)
+                    is_verbose=False)
 
-            elif model_name == 'unet':
+            elif info['model_name'] == 'unet':
                 test_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
                     test_fFrames,
                     test_lFrames,
                     use_batch_norm=True,
                     is_training=False,
                     n_IF=n_IF,
-                    starting_out_channels=out_channels,
+                    starting_out_channels=info['out_channels'],
                     use_attention=use_attention,
                     spatial_attention=spatial_attention,
-                    is_verbose=True)
+                    is_verbose=False)
 
         print('Global parameters:{}'.format(
             count_parameters(tf.global_variables())))
@@ -158,10 +111,10 @@ def testing(model_path, args):
             count_parameters(tf.trainable_variables())))
 
         # DEFINE LOSS 
-        if loss == 'l2':
+        if info['loss'] == 'l2':
             test_loss = l2_loss(
                 test_iFrames, test_rec_iFrames)
-        elif loss == 'l1':
+        elif info['loss'] == 'l1':
             test_loss = l1_loss(
                 test_iFrames, test_rec_iFrames)
 
@@ -188,7 +141,7 @@ def testing(model_path, args):
         sess.run(init_op)
 
         # Load checkpoints
-        sess.restore(sess, weight_path)
+        saver.restore(sess, weight_path)
 
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(
@@ -200,8 +153,11 @@ def testing(model_path, args):
         metrics['weighted_frames'] = []
         metrics['inter_frames'] = []
 
+        print('EVALUATING:{}--------------------------->'.format(
+            info['model_path']))
+
         # START TRAINING HERE
-        for iteration in range(test_iters + 1):
+        for iteration in range(test_iters):
 
             # get frames and metrics
             start_frames, end_frames, mid_frames, rec_mid_frames,\
@@ -224,18 +180,60 @@ def testing(model_path, args):
                 training=False,
                 iteration=iteration,
                 save_path=os.path.join(
-                    model_path 
-                    'test_plots/'))
-        
+                    info['model_path'], 
+                    'test_plots' + '/'))
+
+            if iteration % 50 == 0:
+                print('{}/{} iters complete'.format(
+                    iteration, test_iters))
+
         print('Testing complete.....')
-        with open(model_path + '/evaluation.pkl', 'wb')\
-            as handle:
-            pickle.dump(metrics, handle)
-        print('Pickle file dumped.....')
+        
 
-    return metrics, test_samples 
+    rep_first = metrics['repeat_first']
+    rep_last = metrics['repeat_last']
+    weight_frames = metrics['weighted_frames']
+    inter_frames = metrics['inter_frames']
 
+    mean_rf = sum(rep_first) / test_samples
+    mean_rl = sum(rep_last) / test_samples
+    mean_wf = sum(weight_frames) / test_samples
+    mean_if = sum(inter_frames) / test_samples
 
+    metrics['mean_repeat_first'] = mean_rf
+    metrics['mean_repeat_last'] = mean_rl
+    metrics['mean_weighted_frames'] = mean_wf
+    metrics['mean_inter_frames'] = mean_if
+
+    with open(info['model_path'] + '/evaluation.pkl', 'wb') as handle:
+        pickle.dump(metrics, handle)
+
+    print('Pickle file dumped.....')
+
+if __name__ == '__main__':
+
+    ROOT_DIR = '/media/data/movie/dataset/tf_records/'
+    exp_name = 'slack_20px_fluorescent_window_{}/'
+    model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_startOutChannels-{}'
+    
+    info = {}
+    for window_size in [5, 6, 7, 8, 9]:
+        for out_channels in [8, 16, 32]:
+            exp_name = exp_name.format(str(window_size))
+            model = model.format(str(out_channels))
+            info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
+            info['model_name'] = 'unet'
+            info['batch_size'] = 32
+            info['loss'] = 'l2'
+            info['n_IF'] = window_size - 2
+            info['out_channels'] = out_channels
+            info['attention'] = 0
+            info['use_spatial_attention'] = 1
+            info['TEST_REC_PATH'] = os.path.join(ROOT_DIR, exp_name, 'test.tfrecords')
+
+            testing(info)
+
+# LEGACY CODE:
 def control(args):
 
     # get runnable files
@@ -243,7 +241,6 @@ def control(args):
     print('Experiments to run:')
     for runnable in runnables:
         print(runnable)
-    import ipdb; ipdb.set_trace()
 
     master_metrics = {}
     best_rf = float('inf')
@@ -306,24 +303,4 @@ def control(args):
     print('Model with lowest interframe loss:{}, {}'.format(
         best_if_model, best_if))
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='params of running the experiment')
-
-    parser.add_argument(
-        '--batch_size',
-        type=int,
-        default=32,
-        help='To mention the number of samples in a batch')
-
-    parser.add_argument(
-        '--debug',
-        type=int,
-        default=1,
-        help='Specifies whether to run the script in DEBUG mode')
-
-    args = parser.parse_args()
-
-    control(args)
 
