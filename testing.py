@@ -159,6 +159,10 @@ def testing(info):
         metrics['repeat_last'] = []
         metrics['weighted_frames'] = []
         metrics['inter_frames'] = []
+        metrics['repeat_first_psnr'] = []
+        metrics['repeat_last_psnr'] = []
+        metrics['weighted_frames_psnr'] = []
+        metrics['inter_frames_psnr'] = []
 
         print('EVALUATING:{}--------------------------->'.format(
             info['model_path']))
@@ -174,10 +178,14 @@ def testing(info):
                     inter_frame])
 
             samples = start_frames.shape[0]
-            metrics['repeat_first'].append(repeat_first * samples)
-            metrics['repeat_last'].append(repeat_last * samples)
-            metrics['weighted_frames'].append(weighted * samples)
-            metrics['inter_frames'].append(true_metric * samples)
+            metrics['repeat_first'].append(repeat_first[0] * samples)
+            metrics['repeat_last'].append(repeat_last[0] * samples)
+            metrics['weighted_frames'].append(weighted[0] * samples)
+            metrics['inter_frames'].append(true_metric[0] * samples)
+            metrics['repeat_first_psnr'].append(repeat_first[1] * samples)
+            metrics['repeat_last_psnr'].append(repeat_last[1] * samples)
+            metrics['weighted_frames_psnr'].append(weighted[1] * samples)
+            metrics['inter_frames_psnr'].append(true_metric[1] * samples)
 
             visualize_frames(
                 start_frames,
@@ -197,20 +205,25 @@ def testing(info):
         print('Testing complete.....')
         
 
-    rep_first = metrics['repeat_first']
-    rep_last = metrics['repeat_last']
-    weight_frames = metrics['weighted_frames']
-    inter_frames = metrics['inter_frames']
-
-    mean_rf = sum(rep_first) / test_samples
-    mean_rl = sum(rep_last) / test_samples
-    mean_wf = sum(weight_frames) / test_samples
-    mean_if = sum(inter_frames) / test_samples
+    mean_rf = sum(metrics['repeat_first']) / test_samples
+    mean_rl = sum(metrics['repeat_last']) / test_samples
+    mean_wf = sum(metrics['weighted_frames']) / test_samples
+    mean_if = sum(metrics['inter_frames']) / test_samples
 
     metrics['mean_repeat_first'] = mean_rf
     metrics['mean_repeat_last'] = mean_rl
     metrics['mean_weighted_frames'] = mean_wf
     metrics['mean_inter_frames'] = mean_if
+
+    mean_rf_psnr = sum(metrics['repeat_first_psnr']) / test_samples
+    mean_rl_psnr = sum(metrics['repeat_last_psnr']) / test_samples
+    mean_wf_psnr = sum(metrics['weighted_frames_psnr']) / test_samples
+    mean_if_psnr = sum(metrics['inter_frames_psnr']) / test_samples
+
+    metrics['mean_psnr_repeat_first'] = mean_rf_psnr
+    metrics['mean_psnr_repeat_last'] = mean_rl_psnr
+    metrics['mean_psnr_weighted_frames'] = mean_wf_psnr
+    metrics['mean_psnr_inter_frames'] = mean_if_psnr
 
     with open(info['model_path'] + '/evaluation.pkl', 'wb') as handle:
         pickle.dump(metrics, handle)
