@@ -113,27 +113,20 @@ def training(args):
             train_flow_10)
 
         # DEFINE METRICS
-        if args.loss_id == 0:
-            train_loss = slomo.l1_loss(
-                train_iFrames, train_rec_iFrames)
-            val_loss = slomo.l1_loss(
-                val_iFrames, val_rec_iFrames)
-
-        elif args.loss_id == 1:
-            train_loss = train_l2_loss
-            val_loss = slomo.l2_loss(
-                val_iFrames, val_rec_iFrames)
+        val_loss = slomo.l2_loss(
+            val_iFrames, val_rec_iFrames)
 
         total_train_loss = 0.1*train_l2_loss+1.0*percep_loss+\
             1.0*wrap_loss+50.0*smooth_loss
 
-        tf.summary.scalar('train_l2_loss', train_loss)
-        tf.summary.scalar('total_val_l2_loss', val_loss)
-
-
         # SUMMARIES
-        tf.summary.scalar('total_train_loss',\
-            total_train_loss)
+        tf.summary.scalar('train_l2_loss', train_l2_loss)
+        tf.summary.scalar('wrap_loss', wrap_loss)
+        tf.summary.scalar('smooth_loss', smooth_loss)
+        tf.summary.scalar('percep_loss', percep_loss)
+        tf.summary.scalar('total_val_l2_loss', val_loss)
+        tf.summary.scalar('total_train_loss', total_train_loss)
+
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
             CKPT_PATH + 'train',
@@ -245,7 +238,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--train_iters',
         type=int,
-        default=200000,
+        default=100000,
         help='Mention the number of training iterations')
 
     parser.add_argument(
