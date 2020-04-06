@@ -140,8 +140,8 @@ def training(args):
             val_loss = l2_loss(
                 val_iFrames, val_rec_iFrames)
 
-        total_train_loss = train_l2_loss+percep_loss+\
-            wrap_loss+smooth_loss
+        total_train_loss = 0.1*train_l2_loss+1.0*percep_loss+\
+            1.0*wrap_loss+50.0*smooth_loss
 
         tf.summary.scalar('train_l2_loss', train_loss)
         tf.summary.scalar('total_val_l2_loss', val_loss)
