@@ -7,7 +7,8 @@ import numpy as np
 def visualize_frames(start_frames, end_frames,
                     mid_frames, rec_mid_frames,
                     iteration=100, save_path='',
-                    training=False, num_plots=3):
+                    training=False,
+                    num_plots=3):
     '''
     Args
     	start_frames: (batch_size X height X width X 1 )
@@ -78,10 +79,7 @@ def visualize_frames(start_frames, end_frames,
             v_max = np.max([np.max(end_images[idx]),v_max])
             v_max = np.max([np.max(true_mid_images[idx]),v_max])
             # v_max = np.max([np.max(gen_mid_images[idx]),v_max])
-
-            print('v_min is ',v_min)
-            print('v_max is ',v_max)
-        	# row 0, 2 ... show start and end frames 
+                # row 0, 2 ... show start and end frames 
             axes[row, col].imshow(
                 start_images[idx],
                 cmap="gray",
@@ -117,11 +115,14 @@ def visualize_frames(start_frames, end_frames,
                     vmax=v_max,
                     aspect="auto")
                 
+
     plt.draw()
+
 
     plt.subplots_adjust(
         wspace=.02,
         hspace=.05)
+
 
     filename = ['validation','training'][training]\
         +'_iteration_'\

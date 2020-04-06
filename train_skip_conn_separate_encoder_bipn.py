@@ -12,17 +12,17 @@ from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
 from data_pipeline.tf_augmentations import gaussian_filter 
-from models.utils.optimizer import get_optimizer
-from models.utils.optimizer import count_parameters
-from models.utils.losses import huber_loss
-from models.utils.losses import l2_loss
-from models.utils.losses import l1_loss
-from models.utils.losses import ridge_weight_decay
-from models.utils.losses import perceptual_loss
-from models.utils.visualizer import visualize_frames
 
-from models import bipn
-from models import separate_encoder_bipn
+from utils.optimizer import get_optimizer
+from utils.optimizer import count_parameters
+from utils.losses import huber_loss
+from utils.losses import l2_loss
+from utils.losses import l1_loss
+from utils.losses import ssim_loss
+from utils.losses import ridge_weight_decay
+from utils.losses import perceptual_loss
+from utils.visualizer import visualize_frames
+
 from models import skip_separate_encoder_bipn
 from models import vgg16
 
@@ -88,7 +88,8 @@ def training(args):
                 n_IF=args.n_IF,
                 starting_out_channels=args.starting_out_channels,
                 use_attention=args.use_attention,
-                spatial_attention=args.spatial_attention)
+                spatial_attention=args.spatial_attention,
+                is_verbose=True)
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
@@ -100,7 +101,8 @@ def training(args):
                 is_training=False,
                 starting_out_channels=args.starting_out_channels,
                 use_attention=args.use_attention,
-                spatial_attention=args.spatial_attention)
+                spatial_attention=args.spatial_attention,
+                is_verbose=False)
             
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
@@ -138,6 +140,12 @@ def training(args):
                 train_iFrames, train_rec_iFrames)
             val_loss = l1_loss(
                 val_iFrames, val_rec_iFrames)
+
+        elif args.loss_id == 3:
+            train_loss = ssim_loss(
+                train_rec_iFrames, train_iFrames)
+            val_loss = ssim_loss(
+                val_rec_iFrames, val_iFrames)
 
         total_train_loss = train_loss
         tf.summary.scalar('train_main_loss', train_loss)
@@ -191,7 +199,7 @@ def training(args):
             coord=coord)
 
         # START TRAINING HERE
-        for iteration in range(args.train_iters):
+        for iteration in range(args.train_iters + 1):
             _, t_summ, t_loss = sess.run(
                 [optimizer, merged, total_train_loss])
 
@@ -308,7 +316,7 @@ if __name__ == '__main__':
         '--loss',
         type=str,
         default='l2',
-        help='0:huber, 1:l2, 2:l1')
+        help='0:huber, 1:l2, 2:l1, 3:ssim')
 
     parser.add_argument(
         '--weight_decay',
@@ -378,6 +386,7 @@ if __name__ == '__main__':
     if args.loss == 'huber': args.loss_id = 0
     elif args.loss == 'l2': args.loss_id = 1
     elif args.loss == 'l1': args.loss_id = 2
+    elif args.loss == 'ssim': args.loss_id = 3
 
     # ckpt_folder_name: model-name_iters_batch_size_\
     # optimizer_lr_main-loss_starting-out-channels_\

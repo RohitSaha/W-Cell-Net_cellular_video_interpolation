@@ -26,12 +26,7 @@ def l1_loss(prediction, ground_truth):
     difference = tf.abs(
         prediction - ground_truth)
 
-    # Reduce sum along axis = 1, N_IF
-    l1_loss = tf.reduce_sum(
-        difference,
-        axis=1)
-
-    return tf.reduce_mean(l1_loss)
+    return tf.reduce_mean(difference)
 
 
 def l2_loss(prediction, ground_truth):
@@ -47,12 +42,6 @@ def l2_loss(prediction, ground_truth):
     difference = tf.square(
         prediction - ground_truth)
 
-    # Reduce sum along axis=1, N_IF
-    # l2_loss = tf.reduce_sum(
-    #    difference,
-    #    axis=1)
-
-    # return tf.reduce_mean(l2_loss)
     return tf.reduce_mean(difference)
 
 
@@ -102,8 +91,8 @@ def perceptual_loss(prediction, ground_truth):
         prediction - ground_truth)
 
     # Reduce sum along axis=-1, C
-    perceptual_loss = tf.reduce_sum(
-        difference,
-        axis=-1)
+    # perceptual_loss = tf.reduce_sum(
+    #     difference,
+    #     axis=-1)
 
-    return tf.reduce_mean(perceptual_loss)
+    return tf.reduce_mean(difference)

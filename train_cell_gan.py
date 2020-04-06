@@ -11,10 +11,10 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
+from data_pipeline.tf_augmentations import gaussian_filter 
 
 from utils.optimizer import get_optimizer
 from utils.optimizer import count_parameters
-from utils.losses import huber_loss
 from utils.losses import l2_loss
 from utils.losses import l1_loss
 from utils.losses import ssim_loss
@@ -22,8 +22,11 @@ from utils.losses import ridge_weight_decay
 from utils.losses import perceptual_loss
 from utils.visualizer import visualize_frames
 
-from models import skip_unet_separate_encoder_bipn
+from models import discriminator
+from models import generator_unet 
 from models import vgg16
+
+std_dev = 1
 
 def training(args):
     
@@ -65,9 +68,22 @@ def training(args):
                 batch_size=args.batch_size,
                 n_intermediate_frames=args.n_IF)
 
-        with tf.variable_scope('separate_bipn'):
-            print('TRAIN FRAMES (first):')
-            train_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
+        # Apply gaussian blurring manually
+        '''
+        train_fFrames = gaussian_filter(train_fFrames, std=std_dev)
+        train_lFrames = gaussian_filter(train_lFrames, std=std_dev)
+        train_iFrames = gaussian_filter(train_iFrames, std=std_dev)
+        val_fFrames = gaussian_filter(val_fFrames, std=std_dev)
+        val_lFrames = gaussian_filter(val_lFrames, std=std_dev)
+        val_iFrames = gaussian_filter(val_iFrames, std=std_dev)
+        '''
+
+        # TRAINABLE
+        print('---------------------------------------------')
+        print('----------------- GENERATOR -----------------')
+        print('---------------------------------------------')
+        with tf.variable_scope('generator'):
+            train_rec_iFrames = generator_unet.build_generator(
                 train_fFrames,
                 train_lFrames,
                 use_batch_norm=True,
@@ -78,19 +94,54 @@ def training(args):
                 spatial_attention=args.spatial_attention,
                 is_verbose=True)
 
-        with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
-            print('VAL FRAMES (first):')
-            val_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
+        print('---------------------------------------------')
+        print('-------------- DISCRIMINATOR ----------------')
+        print('---------------------------------------------')
+        # discriminator for classifying real images
+        with tf.variable_scope('discriminator'):
+            train_real_output_discriminator = discriminator.build_discriminator(
+                train_iFrames,
+                use_batch_norm=True,
+                is_training=True,
+                starting_out_channels=args.discri_starting_out_channels,
+                is_verbose=True)
+        # discriminator for classifying fake images
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            train_fake_output_discriminator = discriminator.build_discriminator(
+                train_rec_iFrames,
+                use_batch_norm=True,
+                is_training=True,
+                starting_out_channels=args.discri_starting_out_channels,
+                is_verbose=False)
+
+        # VALIDATION
+        with tf.variable_scope('generator', reuse=tf.AUTO_REUSE):
+            val_rec_iFrames = generator_unet.build_generator(
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,
-                is_training=False,
                 n_IF=args.n_IF,
+                is_training=False,
                 starting_out_channels=args.starting_out_channels,
                 use_attention=args.use_attention,
                 spatial_attention=args.spatial_attention,
                 is_verbose=False)
-            
+
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            val_real_output_discriminator = discriminator.build_discriminator(
+                val_iFrames,
+                use_batch_norm=True,
+                is_training=False,
+                starting_out_channels=args.discri_starting_out_channels,
+                is_verbose=False)
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            val_fake_output_discriminator = discriminator.build_discriminator(
+                val_rec_iFrames,
+                use_batch_norm=True,
+                is_training=False,
+                starting_out_channels=args.discri_starting_out_channels,
+                is_verbose=False)
+
         if args.perceptual_loss_weight:
             # Weights should be kept locally ~ 500 MB space
             with tf.variable_scope('vgg16'):
@@ -107,72 +158,86 @@ def training(args):
         print('Learnable model parameters:{}'.format(
             count_parameters(tf.trainable_variables())))
 
-        # DEFINE METRICS
-        if args.loss_id == 0:
-            train_loss = huber_loss(
-                train_iFrames, train_rec_iFrames,
-                delta=1.)
-            val_loss = huber_loss(
-                val_iFrames, val_rec_iFrames,
-                delta=1.)
+        # DEFINE GAN losses:
+        train_discri_real_loss = tf.reduce_sum(
+            tf.square(
+                train_real_output_discriminator - 1)) / (2 * args.batch_size)
+        train_discri_fake_loss = tf.reduce_sum(
+            tf.square(
+                train_fake_output_discriminator)) / (2 * args.batch_size)
+        train_discriminator_loss = train_discri_real_loss + train_discri_fake_loss
 
-        elif args.loss_id == 1:
-            train_loss = l2_loss(
-                train_iFrames, train_rec_iFrames)
-            val_loss = l2_loss(
-                val_iFrames, val_rec_iFrames) 
+        train_generator_fake_loss = tf.reduce_sum(
+            tf.square(
+                train_fake_output_discriminator - 1)) / args.batch_size
+        train_reconstruction_loss = l1_loss(
+            train_rec_iFrames, train_iFrames) * args.reconstruction_loss_weight
+        train_generator_loss = train_generator_fake_loss + train_reconstruction_loss
 
-        elif args.loss_id == 2:
-            train_loss = l1_loss(
-                train_iFrames, train_rec_iFrames)
-            val_loss = l1_loss(
-                val_iFrames, val_rec_iFrames)
-        
-        elif args.loss_id == 3:
-            train_loss = ssim_loss(
-                train_rec_iFrames, train_iFrames)
-            val_loss = ssim_loss(
-                val_rec_iFrames, val_iFrames)
+        val_discri_real_loss = tf.reduce_sum(
+            tf.square(
+                val_real_output_discriminator - 1)) / (2 * args.batch_size)
+        val_discri_fake_loss = tf.reduce_sum(
+            tf.square(
+                val_fake_output_discriminator)) / (2 * args.batch_size)
+        val_discriminator_loss = val_discri_real_loss + val_discri_fake_loss
 
-        total_train_loss = train_loss
-        tf.summary.scalar('train_l2_loss', train_loss)
-        tf.summary.scalar('total_val_l2_loss', val_loss)
+        val_generator_fake_loss = tf.reduce_sum(
+            tf.square(
+                val_fake_output_discriminator - 1)) / args.batch_size
+        val_reconstruction_loss = l1_loss(
+            val_rec_iFrames, val_iFrames) * args.reconstruction_loss_weight
+        val_generator_loss = val_generator_fake_loss + val_reconstruction_loss
 
         if args.perceptual_loss_weight:
-            train_perceptual_loss = perceptual_loss(
-                train_iFrames_features,
-                train_rec_iFrames_features)
-
-            tf.summary.scalar('train_perceptual_loss',\
-                train_perceptual_loss)
-
-            total_train_loss += train_perceptual_loss\
-                * args.perceptual_loss_weight
-
-        if args.weight_decay:
-            decay_loss = ridge_weight_decay(
-                tf.trainable_variables())
-
-            tf.summary.scalar('ridge_l2_weight_decay',\
-                decay_loss)
-
-            total_train_loss += decay_loss\
-                * args.weight_decay 
+            train_percp_loss = perceptual_loss(
+                train_rec_iFrames_features, train_iFrames_features)
+            train_generator_loss += args.perceptual_loss_weight * train_percp_loss
 
         # SUMMARIES
-        tf.summary.scalar('total_train_loss',\
-            total_train_loss)
+        tf.summary.scalar('train_discri_real_loss', train_discri_real_loss)
+        tf.summary.scalar('train_discri_fake_loss', train_discri_fake_loss)
+        tf.summary.scalar('train_discriminator_loss', train_discriminator_loss)
+        tf.summary.scalar('train_generator_fake_loss', train_generator_fake_loss)
+        tf.summary.scalar('train_reconstruction_loss', train_reconstruction_loss)
+        tf.summary.scalar('train_generator_loss', train_generator_loss)
+
+        tf.summary.scalar('val_discri_real_loss', val_discri_real_loss)
+        tf.summary.scalar('val_discri_fake_loss', val_discri_fake_loss)
+        tf.summary.scalar('val_discriminator_loss', val_discriminator_loss)
+        tf.summary.scalar('val_generator_fake_loss', val_generator_fake_loss)
+        tf.summary.scalar('val_reconstruction_loss', val_reconstruction_loss)
+        tf.summary.scalar('val_generator_loss', val_generator_loss)       
+
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(
             CKPT_PATH + 'train',
             sess.graph)
 
-        # DEFINE OPTIMIZER
-        optimizer = get_optimizer(
-            train_loss,
+        # get variables responsible for generator and discriminator
+        trainable_vars = tf.trainable_variables()
+        generator_vars = [
+            var
+            for var in trainable_vars
+            if 'generator' in var.name]
+        discriminator_vars = [
+            var
+            for var in trainable_vars
+            if 'discriminator' in var.name]
+
+        # DEFINE OPTIMIZERS
+        generator_optimizer = get_optimizer(
+            train_generator_loss,
             optim_id=args.optim_id,
             learning_rate=args.learning_rate,
-            use_batch_norm=True)
+            use_batch_norm=True,
+            var_list=generator_vars)
+        discriminator_optimizer = get_optimizer(
+            train_discriminator_loss,
+            optim_id=args.optim_id,
+            learning_rate=args.learning_rate * 2.,
+            use_batch_norm=True,
+            var_list=discriminator_vars)
 
         init_op = tf.group(
             tf.global_variables_initializer(),
@@ -187,27 +252,42 @@ def training(args):
 
         # START TRAINING HERE
         for iteration in range(args.train_iters):
-            _, t_summ, t_loss = sess.run(
-                [optimizer, merged, total_train_loss])
+
+            for d_iteration in range(args.disc_train_iters):
+                disc_, td_loss = sess.run(
+                    [discriminator_optimizer, train_discriminator_loss])
+
+            gene_, tgf_loss, tr_loss, t_summ = sess.run(
+                [generator_optimizer, train_generator_fake_loss,\
+                    train_reconstruction_loss, merged])
 
             train_writer.add_summary(t_summ, iteration)
-            print('Iter:{}/{}, Train Loss:{}'.format(
+
+            print('Iter:{}/{}, Disc. Loss:{}, Gen. Loss:{}, Rec. Loss:{}'.format(
                 iteration,
                 args.train_iters,
-                t_loss))
+                str(round(td_loss, 6)),
+                str(round(tgf_loss, 6)),
+                str(round(tr_loss, 6))))
 
             if iteration % args.val_every == 0:
-                v_loss = sess.run(val_loss)
-                print('Iter:{}, Val Loss:{}'.format(
+                vd_loss, vgf_loss, vr_loss = sess.run(
+                    [val_discriminator_loss, val_generator_fake_loss,\
+                        val_reconstruction_loss])
+                print('Iter:{}, VAL Disc. Loss:{}, Gen. Loss:{}, Rec. Loss:{}'.format(
                     iteration,
-                    v_loss))
+                    str(round(vd_loss, 6)),
+                    str(round(vgf_loss, 6)),
+                    str(round(vr_loss, 6))))
 
             if iteration % args.save_every == 0:
                 saver.save(
                     sess,
-                    CKPT_PATH + 'iter:{}_val:{}'.format(
+                    CKPT_PATH + 'iter:{}_valDisc:{}_valGen:{}_valRec:{}'.format(
                         str(iteration),
-                        str(round(v_loss, 3))))
+                        str(round(vd_loss, 6)),
+                        str(round(vgf_loss, 6)),
+                        str(round(vr_loss, 6))))
 
             if iteration % args.plot_every == 0:
                 start_frames, end_frames, mid_frames,\
@@ -258,6 +338,12 @@ if __name__ == '__main__':
         help='Mention the number of training iterations')
 
     parser.add_argument(
+        '--disc_train_iters',
+        type=int,
+        default=1,
+        help='Mention the number of nested iterations for discriminator')
+
+    parser.add_argument(
         '--val_every',
         type=int,
         default=100,
@@ -300,16 +386,10 @@ if __name__ == '__main__':
         help='To mention the number of samples in a batch')
 
     parser.add_argument(
-        '--loss',
-        type=str,
-        default='l2',
-        help='0:huber, 1:l2, 2:l1, 3:ssim')
-
-    parser.add_argument(
-        '--weight_decay',
+        '--reconstruction_loss_weight',
         type=float,
         default=0.01,
-        help='To mention the strength of L2 weight decay')
+        help='Mention strength of reconstruction loss')
 
     parser.add_argument(
         '--perceptual_loss_weight',
@@ -365,37 +445,37 @@ if __name__ == '__main__':
         default=0,
         help='Specifies whether to use spatial/channel attention')
 
+    parser.add_argument(
+        '--discri_starting_out_channels',
+        type=int,
+        default=8,
+        help='Specifies the number of channels in first conv layer of discriminator')
+
     args = parser.parse_args()
 
     if args.optimizer == 'adam': args.optim_id = 1
     elif args.optimizer == 'sgd': args.optim_id = 2
 
-    if args.loss == 'huber': args.loss_id = 0
-    elif args.loss == 'l2': args.loss_id = 1
-    elif args.loss == 'l1': args.loss_id = 2
-    elif args.loss == 'ssim': args.loss_id = 3
-
     # ckpt_folder_name: model-name_iters_batch_size_\
-    # optimizer_lr_main-loss_starting-out-channels_\
+    # optimizer_lr_starting-out-channels_\
     # additional-losses_loss-reg
     args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_nIF-{}_startOutChannels-{}'.format(
         args.model_name,
         str(args.train_iters),
+        str(args.disc_train_iters),
         str(args.batch_size),
         args.optimizer,
         str(args.learning_rate),
-        args.loss,
         str(args.n_IF),
         str(args.starting_out_channels))
+
+    args.ckpt_folder_name += '_reconstruction-weight-{}'.format(
+        str(args.reconstruction_loss_weight))
 
     if args.perceptual_loss_weight:
         args.ckpt_folder_name += '_perceptualLoss-{}-{}'.format(
             args.perceptual_loss_endpoint,
             str(args.perceptual_loss_weight))
-
-    if args.weight_decay:
-        args.ckpt_folder_name += '_ridgeWeightDecay-{}'.format(
-            str(args.weight_decay))
 
     if args.use_attention:
         if args.spatial_attention:

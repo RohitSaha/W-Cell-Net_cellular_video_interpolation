@@ -1,13 +1,11 @@
 import tensorflow as tf
 
-
 def linear(input_var, layer_name, output_units,
         activation=tf.keras.activations.relu,
         initializer=tf.keras.initializers.glorot_normal,
         batch_norm=False,
         update_collection=False,
-        is_training=True,
-        bias=False):
+        is_training=True):
 
     # Get shape of a tensor as a list
     shape = input_var.get_shape().as_list()
@@ -19,7 +17,7 @@ def linear(input_var, layer_name, output_units,
             "w", 
             [shape[-1], output_units],
             tf.float32,
-            initializer=initalizer)
+            initializer=initializer)
 
         output_var = tf.matmul(
             input_var,
@@ -29,13 +27,16 @@ def linear(input_var, layer_name, output_units,
             bias_var = tf.get_variable(
                 "b",
                 [output_units],
-                initializer=tf.constant_initalizer(0.0))
+                initializer=initializer)
 
             output_var = tf.nn.bias_add(
                 output_var,
                 bias_var)
 
         #TODO: Incorporate batch norm layer
+
+        if activation is None:
+            return output_var
 
         return activation(output_var)
 

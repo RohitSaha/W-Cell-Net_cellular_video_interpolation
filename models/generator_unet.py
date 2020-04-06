@@ -115,31 +115,24 @@ def upconv_block(inputs, block_name='block_1',
                 kernel_size=3, stride=1, use_bias=False,
                 out_channels=16, is_training=False):
 
-    # upconv(x2, c/2) --> 2 convs
-    
     with tf.variable_scope(block_name):
-        net = UC(inputs, 'up_conv', out_channels,
-            kernel_size=(2, 2), strides=(2, 2),
-            use_bias=use_bias)
+        
+        N, H, W, C = inputs.get_shape().as_list()
+
+        # BILINEAR RESIZE: use this instead of transposed_conv
+        net = tf.image.resize_images(
+            inputs, (H * 2, W * 2),
+            align_corners=True)
 
         if block_name == 'block_2':
-            # BILINEAR RESIZE
             net = tf.image.resize_images(
                 net, (25, 25),
                 align_corners=True)
 
-        # use tanh for the last decoder conv layer
-        if block_name == 'block_4':
-            activation = tf.keras.activations.tanh
-        else:
-            activation = tf.keras.activations.relu
-
-        activation = tf.keras.activations.tanh
-
         for i in range(1): 
             net = CBR(
                 net, 'conv_{}'.format(str(i)), out_channels,
-                activation=activation, # tanh
+                activation=tf.keras.activations.tanh,
                 kernel_size=kernel_size, stride=stride,
                 is_training=is_training,
                 use_batch_norm=use_batch_norm)
@@ -163,7 +156,7 @@ def decoder(inputs, layer_dict_fFrames,
         kernel_size=3, stride=1,
         out_channels=out_channels//2,
         use_bias=True)
-    if is_verbose: print('Decode_1:{}'.format(decode_1))
+    if is_verbose: print('Decode_1:{}'.format(decode_1.shape))
 
     # add skip connection
     fFrames_encode_3 = layer_dict_fFrames['encode_3']
@@ -180,12 +173,13 @@ def decoder(inputs, layer_dict_fFrames,
     if use_attention:
         if spatial_attention:
             decode_1 = SAttn(decode_1)
-            if is_verbose: print('SpatialAttn_1:{}'.format(decode_1))
+            
+            if is_verbose: print('SpatialAttn_1:{}'.format(decode_1.shape))
         else:
             decode_1 = CAttn(decode_1)
-            if is_verbose: print('ChannelAttn_1:{}'.format(decode_1))
+            if is_verbose: print('ChannelAttn_1:{}'.format(decode_1.shape))
 
-    if is_verbose: print('MergeDecode_1:{}'.format(decode_1))
+    if is_verbose: print('MergeDecode_1:{}'.format(decode_1.shape))
     # decode_1 channels: 256
     
     get_shape = decode_1.get_shape().as_list()
@@ -198,7 +192,7 @@ def decoder(inputs, layer_dict_fFrames,
         kernel_size=3, stride=1,
         out_channels=out_channels//2,
         use_bias=True)
-    if is_verbose: print('Decode_2:{}'.format(decode_2))
+    if is_verbose: print('Decode_2:{}'.format(decode_2.shape))
 
     # add skip connection
     fFrames_encode_2 = layer_dict_fFrames['encode_2']
@@ -215,12 +209,12 @@ def decoder(inputs, layer_dict_fFrames,
     if use_attention:
         if spatial_attention:
             decode_2 = SAttn(decode_2)
-            if is_verbose: print('SpatialAttn_2:{}'.format(decode_2))
+            if is_verbose: print('SpatialAttn_2:{}'.format(decode_2.shape))
         else:
             decode_2 = CAttn(decode_2)
-            if is_verbose: print('ChannelAttn_2:{}'.format(decode_2))
+            if is_verbose: print('ChannelAttn_2:{}'.format(decode_2.shape))
  
-    if is_verbose: print('MergeDecode_2:{}'.format(decode_2))
+    if is_verbose: print('MergeDecode_2:{}'.format(decode_2.shape))
     # decode_2 channels: 192
 
     decode_3 = upconv_block(
@@ -230,7 +224,7 @@ def decoder(inputs, layer_dict_fFrames,
         kernel_size=3, stride=1,
         out_channels=64,
         use_bias=True)
-    if is_verbose: print('Decode_3:{}'.format(decode_3))
+    if is_verbose: print('Decode_3:{}'.format(decode_3.shape))
 
     # add skip connection
     fFrames_encode_1 = layer_dict_fFrames['encode_1']
@@ -247,12 +241,12 @@ def decoder(inputs, layer_dict_fFrames,
     if use_attention:
         if spatial_attention:
             decode_3 = SAttn(decode_3)
-            if is_verbose: print('SpatialAttn_3:{}'.format(decode_3))
+            if is_verbose: print('SpatialAttn_3:{}'.format(decode_3.shape))
         else:
             decode_3 = CAttn(decode_3)
-            if is_verbose: print('ChannelAttn_3:{}'.format(decode_3))
+            if is_verbose: print('ChannelAttn_3:{}'.format(decode_3.shape))
 
-    if is_verbose: print('MergeDecode_3:{}'.format(decode_3))
+    if is_verbose: print('MergeDecode_3:{}'.format(decode_3.shape))
     # decode_3 channels: 96
 
     decode_4 = upconv_block(
@@ -262,17 +256,17 @@ def decoder(inputs, layer_dict_fFrames,
         kernel_size=3, stride=1,
         out_channels=n_IF,
         use_bias=True)
-    if is_verbose: print('Decode_4:{}'.format(decode_4))
+    if is_verbose: print('Decode_4:{}'.format(decode_4.shape))
                
     return decode_4
 
 
-def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
+def build_generator(fFrames, lFrames, n_IF=3, use_batch_norm=False,
                 is_training=False, starting_out_channels=8,
                 use_attention=0, input_layer_skip=False,
                 spatial_attention=0, is_verbose=False):
 
-    if is_verbose: print('Encoder_1......')
+    if is_verbose: print('------------ENCODER_1')
     with tf.variable_scope('encoder_1'):
         encode_fFrames, layer_dict_fFrames = encoder(
             fFrames,
@@ -281,7 +275,7 @@ def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
             is_verbose=is_verbose,
             starting_out_channels=starting_out_channels)
 
-    if is_verbose: print('Encoder_2......') 
+    if is_verbose: print('-------------ENCODER_2') 
     with tf.variable_scope('encoder_2'):
         encode_lFrames, layer_dict_lFrames = encoder(
             lFrames,
@@ -303,7 +297,7 @@ def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
     if is_verbose: print('Concatenated:{}'.format(
         encode_Frames.get_shape().as_list()))
 
-    if is_verbose: print('Decoder......')
+    if is_verbose: print('---------------DECODER')
     with tf.variable_scope('decoder'):
         rec_iFrames = decoder(
             encode_Frames,

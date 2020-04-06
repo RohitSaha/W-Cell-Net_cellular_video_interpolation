@@ -1,12 +1,12 @@
 import tensorflow as tf
 
-from models.utils.layer import linear as MLP
-from models.utils.layer import conv_batchnorm_relu as CBR
-from models.utils.layer import upconv_2D as UC
-from models.utils.layer import maxpool as MxP
-from models.utils.layer import avgpool as AvP
-from models.utils.layer import spatial_attention as SAttn
-from models.utils.layer import channel_attention as CAttn
+from utils.layer import linear as MLP
+from utils.layer import conv_batchnorm_relu as CBR
+from utils.layer import upconv_2D as UC
+from utils.layer import maxpool as MxP
+from utils.layer import avgpool as AvP
+from utils.layer import spatial_attention as SAttn
+from utils.layer import channel_attention as CAttn
 
 def conv_block(inputs, block_name='block_1',
                 out_channels=16,
@@ -270,23 +270,24 @@ def decoder(inputs, layer_dict_fFrames,
 def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
                 is_training=False, starting_out_channels=8,
                 use_attention=0, input_layer_skip=False,
-                spatial_attention=0):
+                spatial_attention=0, is_verbose=False):
 
+    if is_verbose: print('Encoder_1......')
     with tf.variable_scope('encoder_1'):
         encode_fFrames, layer_dict_fFrames = encoder(
             fFrames,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=True,
+            is_verbose=is_verbose,
             starting_out_channels=starting_out_channels)
 
-    # use same encoder weights for last frame
+    if is_verbose: print('Encoder_2......')
     with tf.variable_scope('encoder_2'):
         encode_lFrames, layer_dict_lFrames = encoder(
             lFrames,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=False,
+            is_verbose=is_verbose,
             starting_out_channels=starting_out_channels)
 
     # Flip :encode_lFrames
@@ -299,9 +300,10 @@ def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
     encode_Frames = tf.concat(
         [encode_fFrames, encode_lFrames],
         axis=-1)
-    print('Concatenated:{}'.format(
+    if is_verbose: print('Concatenated:{}'.format(
         encode_Frames.get_shape().as_list()))
 
+    if is_verbose: print('Decoder......')
     with tf.variable_scope('decoder'):
         rec_iFrames = decoder(
             encode_Frames,
@@ -310,7 +312,7 @@ def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
             n_IF=n_IF,
             use_batch_norm=use_batch_norm,
             is_training=is_training,
-            is_verbose=True,
+            is_verbose=is_verbose,
             use_attention=use_attention,
             spatial_attention=spatial_attention)
 
@@ -345,7 +347,7 @@ def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
     rec_iFrames = tf.expand_dims(
         rec_iFrames,
         axis=-1)
-    print('Final decoder:{}'.format(rec_iFrames))
+    if is_verbose: print('Final decoder:{}'.format(rec_iFrames))
 
     return rec_iFrames
 

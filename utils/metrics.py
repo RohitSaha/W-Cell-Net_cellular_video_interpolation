@@ -1,7 +1,7 @@
 import tensorflow as tf
 import math as pymath
-from models.utils.losses import l2_loss
 
+from utils.losses import l2_loss
 
 def metric_repeat_fframe(fframes,mid_frames):
 	'''
@@ -21,7 +21,7 @@ def metric_repeat_fframe(fframes,mid_frames):
 		tf.expand_dims(fframes,axis=1))
 
 
-def metric_repeat_lframe(mid_frames,lframes):
+def metric_repeat_lframe(lframes, mid_frames):
 	'''
 	Assumes we predict the last frame for all 
 	intermediate ones, then takes the difference

@@ -3,7 +3,8 @@ import numpy as np
 
 def get_optimizer(train_loss, optim_id=1,
                     learning_rate=1e-3,
-                    use_batch_norm=False):
+                    use_batch_norm=False,
+                    var_list=[]):
 
     if optim_id == 1:
         optimizer = tf.train.AdamOptimizer(
@@ -18,11 +19,21 @@ def get_optimizer(train_loss, optim_id=1,
         update_ops = tf.get_collection(
             tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
+            if var_list == []:
+                train_op = optimizer.minimize(
+                    train_loss)
+            else:
+                train_op = optimizer.minimize(
+                    train_loss,
+                    var_list=var_list)
+    else:
+        if var_list == []:
             train_op = optimizer.minimize(
                 train_loss)
-    else:
-        train_op = optimizer.minimize(
-            train_loss)
+        else:
+            train_op = optimizer.minimize(
+                train_loss,
+                var_list=var_list)
 
     return train_op
 

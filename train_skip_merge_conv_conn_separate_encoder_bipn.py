@@ -9,17 +9,15 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
-from models.utils.optimizer import get_optimizer
-from models.utils.optimizer import count_parameters
-from models.utils.losses import huber_loss
-from models.utils.losses import l2_loss
-from models.utils.losses import ridge_weight_decay
-from models.utils.visualizer import visualize_frames
-from models.utils.visualizer import visualize_tensorboard
 
-from models import bipn
-from models import separate_encoder_bipn
-from models import skip_separate_encoder_bipn
+from utils.optimizer import get_optimizer
+from utils.optimizer import count_parameters
+from utils.losses import huber_loss
+from utils.losses import l2_loss
+from utils.losses import ridge_weight_decay
+from utils.visualizer import visualize_frames
+from utils.visualizer import visualize_tensorboard
+
 from models import skip_merge_conv_separate_encoder_bipn
 
 def training(args):

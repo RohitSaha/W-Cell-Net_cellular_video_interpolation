@@ -5,7 +5,8 @@ from data_pipeline import tf_augmentations
 
 def read_and_decode(filename_queue=[], is_training=False,
                     batch_size=32, height=100, width=100,
-                    n_intermediate_frames=3):
+                    n_intermediate_frames=3,
+                    allow_smaller_final_batch=False):
 
     reader = tf.TFRecordReader()
     _, ser = reader.read(
@@ -79,15 +80,15 @@ def read_and_decode(filename_queue=[], is_training=False,
             batch_size=batch_size,
             capacity=1000000,
             min_after_dequeue=10000,
-            allow_smaller_final_batch=False,
+            allow_smaller_final_batch=allow_smaller_final_batch,
             num_threads=4)
 
     else:
         fFrames, lFrames, iFrames, mfn = tf.train.batch(
             [fFrame, lFrame, iFrame, meta_file_names],
             batch_size=batch_size,
-            capacity=1000,
-            allow_smaller_final_batch=False,
+            capacity=10000,
+            allow_smaller_final_batch=allow_smaller_final_batch,
             num_threads=2)
 
     return fFrames, lFrames, iFrames, mfn
