@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+from models.utils.losses import l1_loss
 
 def flow_back_wrap(x, v, resize=False, normalize=False, crop=None, out="CONSTANT"):
     """
@@ -115,6 +116,7 @@ def flow_back_wrap(x, v, resize=False, normalize=False, crop=None, out="CONSTANT
     return result
 
 def wrapping_loss(frame0, frame1, frameT, F01, F10, Fdasht0, Fdasht1):
+    frameT = tf.squeeze(tf.transpose(frameT,[0,2,3,1,4]),axis=-1)
     return l1_loss(frame0, flow_back_wrap(frame1, F01)) + \
            l1_loss(frame1, flow_back_wrap(frame0, F10)) + \
            l1_loss(frameT, flow_back_wrap(frame0, Fdasht0)) + \
@@ -321,14 +323,25 @@ def SloMo_model(frame0,frame1,first_kernel=7,
 
 # avg_f = (x+y)/2
 
-# # pred,flow_01,flow_10,weighted_ft0,weightedft1 
-# pred_out = SloMo_model(x,y,t_steps=5)
+# pred,flow_01,flow_10,weighted_ft0,weightedft1 = SloMo_model(x,y,t_steps=5)
 
-# print(pred_out[0].shape)
-# print(pred_out[1].shape)
-# print(pred_out[2].shape)
-# print(pred_out[3].shape)
-# print(pred_out[4].shape)
+# with tf.Session().as_default() as sess:
+#     init_op = tf.group(
+#             tf.global_variables_initializer(),
+#             tf.local_variables_initializer())
+#     saver = tf.train.Saver()
+
+#     sess.run(init_op)
+#     pred,flow_01,flow_10,weighted_ft0,weightedft1 = sess.run([pred,flow_01,flow_10,weighted_ft0,weightedft1] )
+#     w_loss = sess.run(wrapping_loss(x,y,pred,flow_01,flow_10,weighted_ft0,weightedft1))
+#     print(w_loss)
+
+# # pred_out = SloMo_model(x,y,t_steps=5)
+# # print(pred_out[0].shape)
+# # print(pred_out[1].shape)
+# # print(pred_out[2].shape)
+# # print(pred_out[3].shape)
+# # print(pred_out[4].shape)
 # # print(flow_01.shape,flow_10.shape,weighted_ft0.shape,weightedft1.shape)
 
 
