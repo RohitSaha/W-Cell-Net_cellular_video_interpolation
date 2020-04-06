@@ -29,6 +29,8 @@ class vgg16:
 
         if block_name[:-1]=='conv':
             self.convlayers(int(block_name[-1]))
+        elif block_name[:-1]=='pool':
+            self.convlayers(int(block_name[-1]))
         elif block_name[:-1]=='fc':
             self.resize_image()
             self.convlayers()
