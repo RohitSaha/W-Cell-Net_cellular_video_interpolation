@@ -15,9 +15,6 @@ from data_pipeline.read_record import read_and_decode
 
 from utils.optimizer import get_optimizer
 from utils.optimizer import count_parameters
-from utils.losses import huber_loss
-from utils.losses import l2_loss
-from utils.losses import perceptual_loss
 from utils.visualizer import visualize_frames
 
 from models import slomo
@@ -103,9 +100,9 @@ def training(args):
         print('Learnable model parameters:{}'.format(
             count_parameters(tf.trainable_variables())))
 
-        train_l2_loss = l2_loss(train_iFrames,train_rec_iFrames)
+        train_l2_loss = slomo.l2_loss(train_iFrames,train_rec_iFrames)
 
-        percep_loss = perceptual_loss(
+        percep_loss = slomo.l2_loss(
             train_iFrames_features,
             train_rec_iFrames_features)
 
@@ -118,16 +115,14 @@ def training(args):
 
         # DEFINE METRICS
         if args.loss_id == 0:
-            train_loss = huber_loss(
-                train_iFrames, train_rec_iFrames,
-                delta=1.)
-            val_loss = huber_loss(
-                val_iFrames, val_rec_iFrames,
-                delta=1.)
+            train_loss = slomo.l1_loss(
+                train_iFrames, train_rec_iFrames)
+            val_loss = slomo.l1_loss(
+                val_iFrames, val_rec_iFrames)
 
         elif args.loss_id == 1:
             train_loss = train_l2_loss
-            val_loss = l2_loss(
+            val_loss = slomo.l2_loss(
                 val_iFrames, val_rec_iFrames)
 
         total_train_loss = 0.1*train_l2_loss+1.0*percep_loss+\
@@ -281,7 +276,7 @@ if __name__ == '__main__':
         '--loss',
         type=str,
         default='l2',
-        help='0:huber, 1:l2')
+        help='0:l1, 1:l2')
 
     parser.add_argument(
         '--perceptual_loss_weight',
@@ -306,7 +301,7 @@ if __name__ == '__main__':
     if args.optimizer == 'adam': args.optim_id = 1
     elif args.optimizer == 'sgd': args.optim_id = 2
 
-    if args.loss == 'huber': args.loss_id = 0
+    if args.loss == 'l1': args.loss_id = 0
     elif args.loss == 'l2': args.loss_id = 1
 
     # ckpt_folder_name: model-name_iters_batch_size_\

@@ -115,6 +115,14 @@ def flow_back_wrap(x, v, resize=False, normalize=False, crop=None, out="CONSTANT
 
     return result
 
+def l1_loss(Ipred, Iref, axis=[3]):
+    return tf.reduce_mean(tf.reduce_sum(tf.abs(Ipred - Iref), axis=axis))  # L1 Norm
+
+
+def l2_loss(Ipred, Iref, axis=[3]):
+    return tf.reduce_mean(tf.reduce_sum(tf.square(Ipred - Iref), axis=axis))  # L2 Norm
+
+
 def wrapping_loss(frame0, frame1, frameT, F01, F10, Fdasht0, Fdasht1):
     frameT = tf.squeeze(tf.transpose(frameT,[0,2,3,1,4]),axis=-1)
     return l1_loss(frame0, flow_back_wrap(frame1, F01)) + \
