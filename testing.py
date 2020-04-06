@@ -251,15 +251,15 @@ if __name__ == '__main__':
 
     ROOT_DIR = '/media/data/movie/dataset/tf_records/'
     exp_name = 'slack_20px_fluorescent_window_{}/'
-    model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
-    
+    # model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
+    model = 'skip_conn_separate_encoder_bipn_100000_16_adam_0.001_l2_nIF-3_startOutChannels-8_perceptualLoss-conv5_3-0.001_vminVmax'
     info = {}
 
     window_size = args.window_size
     out_channels = args.out_channels
 
     exp_name = exp_name.format(str(window_size))
-    model = model.format(str(window_size - 2), str(out_channels))
+    # model = model.format(str(window_size - 2), str(out_channels))
 
     info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
     info['model_name'] = 'skip'
