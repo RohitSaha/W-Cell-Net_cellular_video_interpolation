@@ -41,7 +41,6 @@ def discriminator(inputs, use_batch_norm=False,
     get_shape = inputs.get_shape().as_list()
     if is_verbose: print('Inputs:{}'.format(get_shape))
 
-    # [N, 100, 100, 1]
 
     block_1 = conv_block(
         inputs, block_name='block_1',
@@ -53,12 +52,12 @@ def discriminator(inputs, use_batch_norm=False,
     block_1 = MxP(
         block_1,
         'MxP_1',
-        [1, 2, 2, 1],
-        [1, 2, 2, 1],
+        [1, 2, 2, 2, 1],
+        [1, 1, 2, 2, 1],
         padding='SAME')
     if is_verbose: print('Block_1:{}'.format(block_1.shape))
     layer_dict['block_1'] = block_1
-    # [N, 50, 50, 8]
+    # [N, 3, 50, 50, 8]
 
     block_2 = conv_block(
         block_1, block_name='block_2',
@@ -70,12 +69,12 @@ def discriminator(inputs, use_batch_norm=False,
     block_2 = MxP(
         block_2,
         'MxP_2',
-        [1, 2, 2, 1],
-        [1, 2, 2, 1],
+        [1, 2, 2, 2, 1],
+        [1, 1, 2, 2, 1],
         padding='SAME')
     if is_verbose: print('Block_2:{}'.format(block_2.shape))
     layer_dict['block_2'] = block_2
-    # [N, 25, 25, 16]
+    # [N, 3, 25, 25, 16]
 
     block_3 = conv_block(
         block_2, block_name='block_3',
@@ -87,12 +86,12 @@ def discriminator(inputs, use_batch_norm=False,
     block_3 = MxP(
         block_3,
         'MxP_3',
-        [1, 2, 2, 1],
-        [1, 2, 2, 1],
-        padding='VALID')
+        [1, 2, 2, 2, 1],
+        [1, 1, 2, 2, 1],
+        padding='SAME')
     if is_verbose: print('Block_3:{}'.format(block_3.shape))
     layer_dict['block_3'] = block_3
-    # [N, 12, 12, 32]
+    # [N, 3, 13, 13, 32]
 
     block_4 = conv_block(
         block_3, block_name='block_4',
@@ -104,12 +103,12 @@ def discriminator(inputs, use_batch_norm=False,
     block_4 = MxP(
         block_4,
         'MxP_4',
-        [1, 2, 2, 1],
-        [1, 2, 2, 1],
+        [1, 2, 2, 2, 1],
+        [1, 2, 2, 2, 1],
         padding='SAME')
     if is_verbose: print('Block_4:{}'.format(block_4.shape))
     layer_dict['block_4'] = block_4
-    # [N, 6, 6, 64]
+    # [N, 2, 7, 7, 64]
 
     block_5 = conv_block(
         block_4, block_name='block_5',
@@ -126,7 +125,12 @@ def discriminator(inputs, use_batch_norm=False,
         padding='SAME')
     if is_verbose: print('Block_5:{}'.format(block_5.shape))
     layer_dict['block_5'] = block_5
-    # [N, 3, 3, 128]
+    # [N, 1, 4, 4, 128]
+
+    block_5 = tf.reduce_mean(
+        block_5, axis=1)
+    if is_verbose: print('Reduced_Block_5:{}'.format(block_5.shape))
+    # [N, 4, 4, 128]
 
     return block_5, layer_dict
 
@@ -162,14 +166,6 @@ def build_discriminator(inputs, use_batch_norm=False,
                         is_verbose=False):
 
     N, N_IF, H, W, C = inputs.get_shape().as_list()
-    # [N, N_IF, H, W, 1] -> [N, N_IF, H, W]
-    inputs = tf.reshape(
-        inputs,
-        [N, N_IF, H, W])
-    # [N, N_IF, H, W] -> [N, H, W, N_IF]
-    inputs = tf.transpose(
-        inputs,
-        [0, 2, 3, 1])
 
     with tf.variable_scope('encoder'):
         features, layer_dict = discriminator(
