@@ -41,7 +41,6 @@ def training(args):
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
-        global_step = tf.train.get_global_step()
 
         train_queue = tf.train.string_input_producer(
             [TRAIN_REC_PATH], num_epochs=None)
@@ -140,12 +139,31 @@ def training(args):
             CKPT_PATH + 'train',
             sess.graph)
 
-        # DEFINE OPTIMIZER
-        optimizer = get_optimizer(
-            train_loss,
-            optim_id=args.optim_id,
-            learning_rate=args.learning_rate,
-            use_batch_norm=False)
+        with tf.variable_scope("global_step_and_learning_rate"):
+            global_step = tf.contrib.framework.get_or_create_global_step()
+            learning_rate = tf.train.exponential_decay(
+                args.learning_rate,
+                global_step,
+                100000, #FLAGS.decay_step
+                0.1, #FLAGS.decay_rate
+                staircase=True) #FLAGS.stair
+            incr_global_step = tf.assign(
+                global_step,
+                global_step + 1)
+
+        with tf.variable_scope("optimizer"):
+            with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+                tvars = tf.get_collection(
+                    tf.GraphKeys.TRAINABLE_VARIABLES,
+                    scope='slomo')
+                optimizer = tf.train.AdamOptimizer(
+                    learning_rate,
+                    beta1=0.9)
+                grads_and_vars = optimizer.compute_gradients(
+                    total_train_loss,
+                    tvars)
+                train_op = optimizer.apply_gradients(
+                    grads_and_vars)
 
         init_op = tf.group(
             tf.global_variables_initializer(),
@@ -161,7 +179,7 @@ def training(args):
         # START TRAINING HERE
         for iteration in range(args.train_iters):
             _, t_summ, t_loss = sess.run(
-                [optimizer, merged, total_train_loss])
+                [train_op, merged, total_train_loss])
 
             train_writer.add_summary(t_summ, iteration)
             print('Iter:{}/{}, Train Loss:{}'.format(
