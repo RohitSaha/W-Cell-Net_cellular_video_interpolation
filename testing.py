@@ -24,6 +24,7 @@ from utils.metrics import metric_interpolated_frame
 
 from models import skip_separate_encoder_bipn
 from models import skip_unet_separate_encoder_bipn
+from models import slomo
 from models import vgg16
 
 def testing(info):
@@ -111,6 +112,16 @@ def testing(info):
                     use_attention=use_attention,
                     spatial_attention=spatial_attention,
                     is_verbose=False)
+
+            elif info['model_name'] == 'slowmo':
+                test_rec_iFrames = slomo.SloMo_model(
+                    test_fFrames,
+                    test_lFrames,
+                    first_kernel=7,
+                    second_kernel=5,
+                    reuse=False,
+                    t_steps=3,
+                    verbose=False)
 
         print('Global parameters:{}'.format(
             count_parameters(tf.global_variables())))
@@ -252,7 +263,7 @@ if __name__ == '__main__':
     ROOT_DIR = '/media/data/movie/dataset/tf_records/'
     exp_name = 'slack_20px_fluorescent_window_{}/'
     # model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
-    model = 'skip_conn_separate_encoder_bipn_100000_16_adam_0.001_l2_nIF-3_startOutChannels-8_perceptualLoss-conv5_3-0.01_vminVmax'
+    model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l1_nIF-3_startOutChannels-8'
     info = {}
 
     window_size = args.window_size
