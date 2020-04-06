@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from models.utils.losses import l1_loss
+from utils.losses import l1_loss
 
 def flow_back_wrap(x, v, resize=False, normalize=False, crop=None, out="CONSTANT"):
     """
@@ -343,7 +343,3 @@ def SloMo_model(frame0,frame1,first_kernel=7,
 # # print(pred_out[3].shape)
 # # print(pred_out[4].shape)
 # # print(flow_01.shape,flow_10.shape,weighted_ft0.shape,weightedft1.shape)
-
-
-
-

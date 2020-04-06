@@ -12,12 +12,13 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.WARN)
 from tensorflow.contrib import summary
 
 from data_pipeline.read_record import read_and_decode
-from models.utils.optimizer import get_optimizer
-from models.utils.optimizer import count_parameters
-from models.utils.losses import huber_loss
-from models.utils.losses import l2_loss
-from models.utils.losses import perceptual_loss
-from models.utils.visualizer import visualize_frames
+
+from utils.optimizer import get_optimizer
+from utils.optimizer import count_parameters
+from utils.losses import huber_loss
+from utils.losses import l2_loss
+from utils.losses import perceptual_loss
+from utils.visualizer import visualize_frames
 
 from models import slomo
 from models import vgg16
@@ -39,8 +40,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        args.ckpt_folder_name,
-        '/')
+        args.ckpt_folder_name + '/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -76,7 +76,7 @@ def training(args):
             train_weighted_ft0 = train_output[3]
             train_weighted_ft1 = train_output[4]
 
-        with tf.variable_scope('bipn', reuse=tf.AUTO_REUSE):
+        with tf.variable_scope('slomo', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):') 
             val_output = slomo.SloMo_model(val_fFrames,
                 val_lFrames,first_kernel=7,
@@ -89,9 +89,6 @@ def training(args):
             val_weighted_ft0 = val_output[3]
             val_weighted_ft1 = val_output[4]
 
-            
-        print('Model parameters:{}'.format(
-            count_parameters()))
 
         # Weights should be kept locally ~ 500 MB space
         with tf.variable_scope('vgg16'):
@@ -100,6 +97,11 @@ def training(args):
         with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
             train_rec_iFrames_features = vgg16.build_vgg16(
                 train_rec_iFrames, end_point='pool5').features
+
+        print('Global parameters:{}'.format(
+            count_parameters(tf.global_variables())))
+        print('Learnable model parameters:{}'.format(
+            count_parameters(tf.trainable_variables())))
 
         train_l2_loss = l2_loss(train_iFrames,train_rec_iFrames)
 
@@ -214,7 +216,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--train_iters',
         type=int,
-        default=15000,
+        default=200000,
         help='Mention the number of training iterations')
 
     parser.add_argument(
@@ -226,7 +228,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--save_every',
         type=int,
-        default=100,
+        default=5000,
         help='Number of iterations after which model is saved')
 
     parser.add_argument(
@@ -250,13 +252,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--learning_rate',
         type=float,
-        default=1e-3,
+        default=1e-4,
         help='To mention the starting learning rate')
 
     parser.add_argument(
         '--batch_size',
         type=int,
-        default=32,
+        default=8,
         help='To mention the number of samples in a batch')
 
     parser.add_argument(
@@ -268,7 +270,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--perceptual_loss_weight',
         type=int,
-        default=1,
+        default=0,
         help='Mention strength of perceptual loss')
 
     parser.add_argument(
@@ -277,10 +279,10 @@ if __name__ == '__main__':
         default='conv4_3',
         help='Mentions the layer from which features are to be extracted')
 
-    parser.add_agument(
+    parser.add_argument(
         '--model_name',
         type=str,
-        default='bipn',
+        default='slowmo',
         help='Mentions name of model to be run')
 
     args = parser.parse_args()
