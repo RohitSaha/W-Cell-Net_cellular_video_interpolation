@@ -137,7 +137,7 @@ def training(args):
             learning_rate = tf.train.exponential_decay(
                 args.learning_rate,
                 global_step,
-                100000, #FLAGS.decay_step
+                50000, #FLAGS.decay_step
                 0.1, #FLAGS.decay_rate
                 staircase=True) #FLAGS.stair
             incr_global_step = tf.assign(
