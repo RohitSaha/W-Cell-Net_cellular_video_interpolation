@@ -18,7 +18,9 @@ def metric_repeat_fframe(fframes,mid_frames):
 	'''
 
 	return l2_loss(mid_frames,
-		tf.expand_dims(fframes,axis=1))
+				tf.expand_dims(fframes,axis=1)),\
+			compute_psnr(mid_frames,
+				tf.expand_dims(fframes,axis=1)),
 
 
 def metric_repeat_lframe(lframes, mid_frames):
@@ -36,7 +38,9 @@ def metric_repeat_lframe(lframes, mid_frames):
 	'''
 
 	return l2_loss(mid_frames,
-		tf.expand_dims(lframes,axis=1))
+				tf.expand_dims(lframes,axis=1)),\
+			compute_psnr(mid_frames,
+				tf.expand_dims(lframes,axis=1))
 
 
 
@@ -75,7 +79,8 @@ def metric_weighted_frame(fframes,mid_frames,lframes):
 		lframes_tiled *(1-weighting))/tf.cast(
 		(inter_frames+1),dtype=tf.float32)
 
-	return l2_loss(mid_frames,weighted_sum)
+	return l2_loss(mid_frames,weighted_sum),
+			compute_psnr(mid_frames,weighted_sum)
 
 
 
@@ -94,7 +99,18 @@ def metric_interpolated_frame(mid_frames,
 		l2 loss between predicion and ground truth
 	'''
 
-	return l2_loss(mid_frames,rec_mid_frames)
+	return l2_loss(mid_frames,rec_mid_frames),\
+			compute_psnr(mid_frames,rec_mid_frames)
+
+def compute_psnr(ref, target):
+    diff = target - ref
+    sqr = tf.multiply(diff, diff)
+    err = tf.reduce_sum(sqr)
+    v = tf.reduce_prod(diff.get_shape())
+    mse = err / tf.cast(v, tf.float32)
+    psnr = 10. * (tf.log(255. * 255. / mse) / tf.log(10.))
+
+    return psnr
 
 
 	
