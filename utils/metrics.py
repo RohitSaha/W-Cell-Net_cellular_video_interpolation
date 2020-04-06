@@ -111,14 +111,3 @@ def compute_psnr(ref, target):
     psnr = 10. * (tf.log(255. * 255. / mse) / tf.log(10.))
 
     return psnr
-
-
-	
-
-
-
-
-
-
-
-
