@@ -139,7 +139,7 @@ def training(args):
             learning_rate = tf.train.exponential_decay(
                 args.learning_rate,
                 global_step,
-                50000, #FLAGS.decay_step
+                100000, #FLAGS.decay_step
                 0.1, #FLAGS.decay_rate
                 staircase=True) #FLAGS.stair
             incr_global_step = tf.assign(
@@ -240,25 +240,25 @@ if __name__ == '__main__':
     parser.add_argument(
         '--train_iters',
         type=int,
-        default=100000,
+        default=200000,
         help='Mention the number of training iterations')
 
     parser.add_argument(
         '--val_every',
         type=int,
-        default=100,
+        default=1000,
         help='Number of iterations after which validation is done')
 
     parser.add_argument(
         '--save_every',
         type=int,
-        default=5000,
+        default=10000,
         help='Number of iterations after which model is saved')
 
     parser.add_argument(
         '--plot_every',
         type=int,
-        default=1000,
+        default=5000,
         help='Nu,ber of iterations after which plots will be saved')
 
     parser.add_argument(
@@ -282,7 +282,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--batch_size',
         type=int,
-        default=8,
+        default=4,
         help='To mention the number of samples in a batch')
 
     parser.add_argument(

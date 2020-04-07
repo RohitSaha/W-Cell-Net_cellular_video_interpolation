@@ -73,11 +73,11 @@ def metric_weighted_frame(fframes,mid_frames,lframes):
 
 	weighting = tf.range(1.0,inter_frames+1)
 	weighting = tf.reshape(weighting, 
-		[1,inter_frames,1,1,1])
+		[1,inter_frames,1,1,1])/tf.cast(
+		(inter_frames+1),dtype=tf.float32)
 
 	weighted_sum = (fframes_tiled * weighting + 
-		lframes_tiled *(1-weighting))/tf.cast(
-		(inter_frames+1),dtype=tf.float32)
+		lframes_tiled *(1-weighting))
 
 	return [l2_loss(mid_frames,weighted_sum),\
 			compute_psnr(mid_frames,weighted_sum)]
