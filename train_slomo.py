@@ -48,7 +48,8 @@ def training(args):
             read_and_decode(
                 filename_queue=train_queue,
                 is_training=True,
-                batch_size=args.batch_size)
+                batch_size=args.batch_size,
+                n_intermediate_frames=args.n_IF)
 
         val_queue = tf.train.string_input_producer(
             [VAL_REC_PATH], num_epochs=None)
@@ -56,14 +57,15 @@ def training(args):
             read_and_decode(
                 filename_queue=val_queue,
                 is_training=False,
-                batch_size=args.batch_size)
+                batch_size=args.batch_size,
+                n_intermediate_frames=args.n_IF)
 
         with tf.variable_scope('slomo'):
             print('TRAIN FRAMES (first):')
             train_output = slomo.SloMo_model(train_fFrames,
                 train_lFrames,first_kernel=7,
                 second_kernel=5,reuse=False,
-                t_steps=3,verbose=False)
+                t_steps=args.n_IF,verbose=False)
 
             train_rec_iFrames = train_output[0]
 
@@ -77,7 +79,7 @@ def training(args):
             val_output = slomo.SloMo_model(val_fFrames,
                 val_lFrames,first_kernel=7,
                 second_kernel=5,reuse=False,
-                t_steps=3,verbose=False)
+                t_steps=args.n_IF,verbose=False)
 
             val_rec_iFrames = val_output[0]
             val_flow_01 = val_output[1]
@@ -290,16 +292,10 @@ if __name__ == '__main__':
         help='0:l1, 1:l2')
 
     parser.add_argument(
-        '--perceptual_loss_weight',
+        '--n_IF',
         type=int,
-        default=0,
-        help='Mention strength of perceptual loss')
-
-    parser.add_argument(
-        '--perceptual_loss_endpoint',
-        type=str,
-        default='conv4_3',
-        help='Mentions the layer from which features are to be extracted')
+        default=3,
+        help='Mentions intermediate frames')
 
     parser.add_argument(
         '--model_name',
@@ -317,19 +313,15 @@ if __name__ == '__main__':
 
     # ckpt_folder_name: model-name_iters_batch_size_\
     # optimizer_lr_main-loss_additional-losses_loss-reg
-    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}'.format(
+    args.ckpt_folder_name = '{}_{}_{}_{}_{}_{}_nIF-{}'.format(
         args.model_name,
         str(args.train_iters),
         str(args.batch_size),
         args.optimizer,
         str(args.learning_rate),
-        args.loss)
+        args.loss,
+        str(args.n_IF))
 
-    if args.perceptual_loss_weight:
-        args.ckpt_folder_name += '_{}-{}_{}'.format(
-            'perceptualLoss',
-            args.perceptual_loss_endpoint,
-            str(args.perceptual_loss_weight))
 
     training(args)
 

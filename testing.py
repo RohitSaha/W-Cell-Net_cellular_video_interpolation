@@ -87,33 +87,35 @@ def testing(info):
                 n_intermediate_frames=n_IF,
                 allow_smaller_final_batch=False)
 
-        with tf.variable_scope('separate_bipn'):
-            print('TEST FRAMES (first):')
-            if info['model_name'] == 'skip':
-                test_rec_iFrames = skip_separate_encoder_bipn.build_bipn(
-                    test_fFrames,
-                    test_lFrames,
-                    use_batch_norm=True,
-                    is_training=False,
-                    n_IF=n_IF,
-                    starting_out_channels=info['out_channels'],
-                    use_attention=use_attention,
-                    spatial_attention=spatial_attention,
-                    is_verbose=False)
+        if info['model_name'] in ['skip', 'unet']:
+            with tf.variable_scope('separate_bipn'):
+                print('TEST FRAMES (first):')
+                if info['model_name'] == 'skip':
+                    test_rec_iFrames = skip_separate_encoder_bipn.build_bipn(
+                        test_fFrames,
+                        test_lFrames,
+                        use_batch_norm=True,
+                        is_training=False,
+                        n_IF=n_IF,
+                        starting_out_channels=info['out_channels'],
+                        use_attention=use_attention,
+                        spatial_attention=spatial_attention,
+                        is_verbose=False)
 
-            elif info['model_name'] == 'unet':
-                test_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
-                    test_fFrames,
-                    test_lFrames,
-                    use_batch_norm=True,
-                    is_training=False,
-                    n_IF=n_IF,
-                    starting_out_channels=info['out_channels'],
-                    use_attention=use_attention,
-                    spatial_attention=spatial_attention,
-                    is_verbose=False)
+                elif info['model_name'] == 'unet':
+                    test_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
+                        test_fFrames,
+                        test_lFrames,
+                        use_batch_norm=True,
+                        is_training=False,
+                        n_IF=n_IF,
+                        starting_out_channels=info['out_channels'],
+                        use_attention=use_attention,
+                        spatial_attention=spatial_attention,
+                        is_verbose=False)
 
-            elif info['model_name'] == 'slomo':
+        elif info['model_name'] == 'slomo':
+            with tf.variable_scope('slomo'):
                 test_output = slomo.SloMo_model(
                     test_fFrames,
                     test_lFrames,
@@ -265,7 +267,7 @@ if __name__ == '__main__':
     exp_name = 'slack_20px_fluorescent_window_{}/'
     # model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
     # model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l2_startOutChannels-4'
-    model ='slowmo_100000_8_adam_0.0001_l2'
+    model ='first-run_slowmo_100000_8_adam_0.0001_l2'
     info = {}
 
     window_size = args.window_size
