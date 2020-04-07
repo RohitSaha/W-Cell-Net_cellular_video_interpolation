@@ -107,7 +107,7 @@ def compute_psnr(ref, target):
     sqr = tf.multiply(diff, diff)
     err = tf.reduce_sum(sqr)
     v = tf.reduce_prod(diff.get_shape())
-    mse = err / tf.cast(v, tf.float32)
+    mse = err / tf.cast(v, tf.float32) + 1e-12
     psnr = 10. * (tf.log(255. * 255. / mse) / tf.log(10.))
 
     return psnr
