@@ -1,5 +1,5 @@
 #source /home/moseslab/.bashrc
-CUDA_VISIBLE_DEVICES=-1
+CUDA_VISIBLE_DEVICES=0
 out_channels=$1
 n_IF=$2
 exp_name=$3

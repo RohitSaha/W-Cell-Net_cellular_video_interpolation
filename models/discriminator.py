@@ -120,8 +120,8 @@ def discriminator(inputs, use_batch_norm=False,
     block_5 = MxP(
         block_5,
         'MxP_5',
-        [1, 2, 2, 1],
-        [1, 2, 2, 1],
+        [1, 2, 2, 2, 1],
+        [1, 2, 2, 2, 1],
         padding='SAME')
     if is_verbose: print('Block_5:{}'.format(block_5.shape))
     layer_dict['block_5'] = block_5
@@ -138,7 +138,7 @@ def discriminator(inputs, use_batch_norm=False,
 def fully_connected_layer(inputs, is_training=False,
                         is_verbose=False):
 
-    N, H, W, C = inputs.get_shape().as_list()
+    N, N_IF, H, W, C = inputs.get_shape().as_list()
     inputs = tf.reshape(
         inputs,
         [N, -1])

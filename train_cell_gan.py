@@ -170,7 +170,7 @@ def training(args):
         train_generator_fake_loss = tf.reduce_sum(
             tf.square(
                 train_fake_output_discriminator - 1)) / args.batch_size
-        train_reconstruction_loss = l1_loss(
+        train_reconstruction_loss = l2_loss(
             train_rec_iFrames, train_iFrames) * args.reconstruction_loss_weight
         train_generator_loss = train_generator_fake_loss + train_reconstruction_loss
 
@@ -185,7 +185,7 @@ def training(args):
         val_generator_fake_loss = tf.reduce_sum(
             tf.square(
                 val_fake_output_discriminator - 1)) / args.batch_size
-        val_reconstruction_loss = l1_loss(
+        val_reconstruction_loss = l2_loss(
             val_rec_iFrames, val_iFrames) * args.reconstruction_loss_weight
         val_generator_loss = val_generator_fake_loss + val_reconstruction_loss
 

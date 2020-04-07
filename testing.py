@@ -113,8 +113,8 @@ def testing(info):
                     spatial_attention=spatial_attention,
                     is_verbose=False)
 
-            elif info['model_name'] == 'slowmo':
-                test_rec_iFrames = slomo.SloMo_model(
+            elif info['model_name'] == 'slomo':
+                test_output = slomo.SloMo_model(
                     test_fFrames,
                     test_lFrames,
                     first_kernel=7,
@@ -122,6 +122,7 @@ def testing(info):
                     reuse=False,
                     t_steps=3,
                     verbose=False)
+                test_rec_iFrames = test_output[0]
 
         print('Global parameters:{}'.format(
             count_parameters(tf.global_variables())))
@@ -263,7 +264,8 @@ if __name__ == '__main__':
     ROOT_DIR = '/media/data/movie/dataset/tf_records/'
     exp_name = 'slack_20px_fluorescent_window_{}/'
     # model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
-    model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l1_nIF-3_startOutChannels-8'
+    # model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l2_startOutChannels-4'
+    model ='slowmo_100000_8_adam_0.0001_l2'
     info = {}
 
     window_size = args.window_size
@@ -273,7 +275,7 @@ if __name__ == '__main__':
     # model = model.format(str(window_size - 2), str(out_channels))
 
     info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
-    info['model_name'] = 'skip'
+    info['model_name'] = 'slomo'
     info['batch_size'] = 32
     info['loss'] = 'l2'
     info['n_IF'] = window_size - 2
