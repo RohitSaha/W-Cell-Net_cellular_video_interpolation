@@ -122,7 +122,7 @@ def testing(info):
                     first_kernel=7,
                     second_kernel=5,
                     reuse=False,
-                    t_steps=3,
+                    t_steps=n_IF,
                     verbose=False)
                 test_rec_iFrames = test_output[0]
 
@@ -265,9 +265,7 @@ if __name__ == '__main__':
 
     ROOT_DIR = '/media/data/movie/dataset/tf_records/'
     exp_name = 'slack_20px_fluorescent_window_{}/'
-    # model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
-    # model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l2_startOutChannels-4'
-    model ='first-run_slowmo_100000_8_adam_0.0001_l2'
+    # model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
     info = {}
 
     window_size = args.window_size
@@ -275,9 +273,10 @@ if __name__ == '__main__':
 
     exp_name = exp_name.format(str(window_size))
     # model = model.format(str(window_size - 2), str(out_channels))
+    model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l2_startOutChannels-4'
 
     info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
-    info['model_name'] = 'slomo'
+    info['model_name'] = 'skip'
     info['batch_size'] = 32
     info['loss'] = 'l2'
     info['n_IF'] = window_size - 2

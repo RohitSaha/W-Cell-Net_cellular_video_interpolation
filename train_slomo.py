@@ -2,7 +2,6 @@ import os
 import pickle
 import numpy as np
 import argparse
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -86,7 +85,6 @@ def training(args):
             val_flow_10 = val_output[2]
             val_weighted_ft0 = val_output[3]
             val_weighted_ft1 = val_output[4]
-
 
         # Weights should be kept locally ~ 500 MB space
         with tf.variable_scope('vgg16'):

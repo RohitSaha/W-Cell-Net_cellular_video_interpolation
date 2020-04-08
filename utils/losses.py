@@ -28,6 +28,11 @@ def l1_loss(prediction, ground_truth):
 
     return tf.reduce_mean(difference)
 
+def tf_l2_loss(predictions, ground_truth):
+    return tf.nn.l2_loss(predictions - ground_truth)
+
+def tf_perceptual_loss(predictions, ground_truth):
+    return tf.nn.l2_loss(predictions - ground_truth)
 
 def l2_loss(prediction, ground_truth):
     '''Performs L2 loss between 2 tensors.
