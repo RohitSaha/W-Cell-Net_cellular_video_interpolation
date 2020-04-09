@@ -331,7 +331,7 @@ def SloMo_model(frame0,frame1,first_kernel=7,
 
 # avg_f = (x+y)/2
 
-# pred,flow_01,flow_10,weighted_ft0,weightedft1 = SloMo_model(x,y,t_steps=5)
+# pred,flow_01,flow_10,weighted_ft0,weightedft1 = SloMo_model(x,y,t_steps=2)
 
 # with tf.Session().as_default() as sess:
 #     init_op = tf.group(
@@ -344,10 +344,10 @@ def SloMo_model(frame0,frame1,first_kernel=7,
 #     w_loss = sess.run(wrapping_loss(x,y,pred,flow_01,flow_10,weighted_ft0,weightedft1))
 #     print(w_loss)
 
-# # pred_out = SloMo_model(x,y,t_steps=5)
-# # print(pred_out[0].shape)
-# # print(pred_out[1].shape)
-# # print(pred_out[2].shape)
-# # print(pred_out[3].shape)
-# # print(pred_out[4].shape)
-# # print(flow_01.shape,flow_10.shape,weighted_ft0.shape,weightedft1.shape)
+# pred_out = SloMo_model(x,y,t_steps=5)
+# print(pred_out[0].shape)
+# print(pred_out[1].shape)
+# print(pred_out[2].shape)
+# print(pred_out[3].shape)
+# print(pred_out[4].shape)
+# print(flow_01.shape,flow_10.shape,weighted_ft0.shape,weightedft1.shape)
