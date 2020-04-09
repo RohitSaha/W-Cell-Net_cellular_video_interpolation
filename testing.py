@@ -273,7 +273,7 @@ if __name__ == '__main__':
 
     exp_name = exp_name.format(str(window_size))
     # model = model.format(str(window_size - 2), str(out_channels))
-    model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l2_startOutChannels-4'
+    model = 'skip_conn_separate_encoder_bipn_100000_16_adam_0.001_l2_nIF-3_startOutChannels-16_perceptualLoss-conv5_3-0.001_ridgeWeightDecay-1e-05_vminVmax'
 
     info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
     info['model_name'] = 'skip'

@@ -16,10 +16,12 @@ from utils.optimizer import get_optimizer
 from utils.optimizer import count_parameters
 from utils.losses import huber_loss
 from utils.losses import l2_loss
+from utils.losses import tf_l2_loss
 from utils.losses import l1_loss
 from utils.losses import ssim_loss
 from utils.losses import ridge_weight_decay
 from utils.losses import perceptual_loss
+from utils.losses import tf_perceptual_loss
 from utils.visualizer import visualize_frames
 
 from models import skip_unet_separate_encoder_bipn
@@ -117,9 +119,9 @@ def training(args):
                 delta=1.)
 
         elif args.loss_id == 1:
-            train_loss = l2_loss(
+            train_loss = tf_l2_loss(
                 train_iFrames, train_rec_iFrames)
-            val_loss = l2_loss(
+            val_loss = tf_l2_loss(
                 val_iFrames, val_rec_iFrames) 
 
         elif args.loss_id == 2:
@@ -139,7 +141,7 @@ def training(args):
         tf.summary.scalar('total_val_l2_loss', val_loss)
 
         if args.perceptual_loss_weight:
-            train_perceptual_loss = perceptual_loss(
+            train_perceptual_loss = tf_perceptual_loss(
                 train_iFrames_features,
                 train_rec_iFrames_features)
 
