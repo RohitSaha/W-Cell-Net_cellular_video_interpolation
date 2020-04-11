@@ -301,6 +301,13 @@ if __name__ == '__main__':
         default='slowmo',
         help='Mentions name of model to be run')
 
+    parser.add_argument(
+        '--debug',
+        type=int,
+        default=1,
+        help='Specifies whether to run the script in DEBUG mode')
+
+
     args = parser.parse_args()
 
     if args.optimizer == 'adam': args.optim_id = 1
@@ -320,6 +327,8 @@ if __name__ == '__main__':
         args.loss,
         str(args.n_IF))
 
+    if args.debug:
+        args.ckpt_folder_name = 'demo'
 
     training(args)
 

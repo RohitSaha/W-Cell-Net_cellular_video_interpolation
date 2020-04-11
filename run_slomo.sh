@@ -12,4 +12,5 @@ python train_slomo.py --train_iters 200000 \
     --batch_size 4 \
     --loss 'l2' \
     --n_IF $n_IF \
-    --model_name 'slowmo'
+    --model_name 'slowmo' \
+    --debug 1

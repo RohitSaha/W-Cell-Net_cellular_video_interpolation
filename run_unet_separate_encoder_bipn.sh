@@ -10,7 +10,7 @@ python train_unet_separate_encoder_bipn.py --train_iters 100000 \
     --experiment_name $exp_name \
     --optimizer 'adam' \
     --learning_rate 1e-3 \
-    --batch_size 16 \
+    --batch_size 32 \
     --loss 'l2' \
     --weight_decay 0.0 \
     --perceptual_loss_weight 0.0 \

@@ -12,13 +12,13 @@ python train_skip_conn_separate_encoder_bipn.py --train_iters 100000 \
     --learning_rate 1e-3 \
     --batch_size 16 \
     --loss 'l2' \
-    --weight_decay 1e-5 \
-    --perceptual_loss_weight 1e-3 \
+    --weight_decay 0 \
+    --perceptual_loss_weight 0 \
     --perceptual_loss_endpoint 'conv5_3' \
     --model_name 'skip_conn_separate_encoder_bipn' \
     --starting_out_channels $out_channels \
     --n_IF $n_IF \
     --use_attention 0 \
     --spatial_attention 0 \
-    --additional_info 'vminVmax' \
-    --debug 0
+    --additional_info '' \
+    --debug 1

@@ -169,6 +169,7 @@ def testing(info):
             coord=coord)
 
         metrics = {}
+        metrics['learnable_parameters'] = count_parameters(tf.trainable_variables())
         metrics['repeat_first'] = []
         metrics['repeat_last'] = []
         metrics['weighted_frames'] = []
@@ -273,10 +274,10 @@ if __name__ == '__main__':
 
     exp_name = exp_name.format(str(window_size))
     # model = model.format(str(window_size - 2), str(out_channels))
-    model = 'skip_conn_separate_encoder_bipn_100000_16_adam_0.001_l2_nIF-3_startOutChannels-16_perceptualLoss-conv5_3-0.001_ridgeWeightDecay-1e-05_vminVmax'
+    model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-3_startOutChannels-4'
 
     info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
-    info['model_name'] = 'skip'
+    info['model_name'] = 'unet'
     info['batch_size'] = 32
     info['loss'] = 'l2'
     info['n_IF'] = window_size - 2
