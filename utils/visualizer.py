@@ -37,7 +37,7 @@ def visualize_frames(start_frames, end_frames,
     #     num_samples,
     #     replace = False) # array of shuffled indicies
 
-    selected_samples = np.range(num_samples)
+    selected_samples = np.arange(num_samples)
 
     # subsample the batch for plotting
 
