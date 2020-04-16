@@ -13,4 +13,4 @@ python train_slomo.py --train_iters 200000 \
     --loss 'l2' \
     --n_IF $n_IF \
     --model_name 'slowmo' \
-    --debug 1
+    --debug 0

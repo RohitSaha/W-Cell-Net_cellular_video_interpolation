@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 import argparse
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -13,7 +13,7 @@ from data_pipeline.read_record import read_and_decode
 from utils.optimizer import get_optimizer
 from utils.optimizer import count_parameters
 from utils.losses import huber_loss
-from utils.losses import l2_loss
+from utils.losses import tf_l2_loss
 from utils.visualizer import visualize_frames
 
 from models import bipn
@@ -22,7 +22,7 @@ from models import separate_encoder_bipn
 def training(args):
     
     # DIRECTORY FOR CKPTS and META FILES
-    ROOT_DIR = '/neuhaus/movie/dataset/tf_records'
+    ROOT_DIR = '/media/data/movie/dataset/tf_records'
     TRAIN_REC_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
@@ -34,7 +34,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'separate_bipn_huber_adam_1e-3/')
+        'separate_bipn_100000_32_adam_1e-3_l2/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -73,7 +73,7 @@ def training(args):
                 is_training=False)
             
         print('Model parameters:{}'.format(
-            count_parameters()))
+            count_parameters(tf.trainable_variables())))
 
         # DEFINE METRICS
         if args.loss_id == 0:
@@ -85,9 +85,9 @@ def training(args):
                 delta=1.)
 
         elif args.loss_id == 1:
-            train_loss = l2_loss(
+            train_loss = tf_l2_loss(
                 train_iFrames, train_rec_iFrames)
-            val_loss = l2_loss(
+            val_loss = tf_l2_loss(
                 val_iFrames, val_rec_iFrames) 
         
         # SUMMARIES
@@ -118,51 +118,65 @@ def training(args):
             coord=coord)
 
         # START TRAINING HERE
-        try:
-            for iteration in range(args.train_iters):
-                _, t_summ, t_loss = sess.run(
-                    [optimizer, merged, train_loss])
+        for iteration in range(args.train_iters):
+            _, t_summ, t_loss = sess.run(
+                [optimizer, merged, train_loss])
 
-                train_writer.add_summary(t_summ, iteration)
-                print('Iter:{}/{}, Train Loss:{}'.format(
+            train_writer.add_summary(t_summ, iteration)
+            print('Iter:{}/{}, Train Loss:{}'.format(
+                iteration,
+                args.train_iters,
+                t_loss))
+
+            if iteration % args.val_every == 0:
+                v_loss = sess.run(val_loss)
+                print('Iter:{}, Val Loss:{}'.format(
                     iteration,
-                    args.train_iters,
-                    t_loss))
+                    v_loss))
 
-                if iteration % args.val_every == 0:
-                    v_loss = sess.run(val_loss)
-                    print('Iter:{}, Val Loss:{}'.format(
-                        iteration,
-                        v_loss))
+            if iteration % args.save_every == 0:
+                saver.save(
+                    sess,
+                    CKPT_PATH + 'iter:{}_val:{}'.format(
+                        str(iteration),
+                        str(round(v_loss, 3))))
 
-                if iteration % args.save_every == 0:
-                    saver.save(
-                        sess,
-                        CKPT_PATH + 'iter:{}_val:{}'.format(
-                            str(iteration),
-                            str(round(v_loss, 3))))
+            if iteration % args.plot_every == 0:
+                start_frames, end_frames, mid_frames,\
+                    rec_mid_frames = sess.run(
+                        [train_fFrames, train_lFrames,\
+                            train_iFrames,\
+                            train_rec_iFrames])
 
-                if iteration % args.plot_every == 0:
-                    start_frames, end_frames, mid_frames,\
-                        rec_mid_frames = sess.run(
-                            [train_fFrames, train_lFrames,\
-                                train_iFrames,\
-                                train_rec_iFrames])
+                visualize_frames(
+                    start_frames,
+                    end_frames,
+                    mid_frames,
+                    rec_mid_frames,
+                    training=True,
+                    iteration=iteration,
+                    save_path=os.path.join(
+                        CKPT_PATH,
+                        'train_plots/'))
 
-                    visualize_frames(
-                        start_frames,
-                        end_frames,
-                        mid_frames,
-                        rec_mid_frames,
-                        iteration=iteration,
-                        save_path=os.path.join(
-                            CKPT_PATH,
-                            'plots/'))
+                start_frames, end_frames, mid_frames,\
+                    rec_mid_frames = sess.run(
+                        [val_fFrames, val_lFrames,\
+                            val_iFrames,
+                            val_rec_iFrames])
 
-            coord.join(threads)
+                visualize_frames(
+                    start_frames,
+                    end_frames,
+                    mid_frames,
+                    rec_mid_frames,
+                    training=False,
+                    iteration=iteration,
+                    save_path=os.path.join(
+                        CKPT_PATH,
+                        'validation_plots/'))
 
-        except Exception as e:
-            coord.request_stop(e)
+        print('Training complete.....')
 
 
 if __name__ == '__main__':
@@ -172,7 +186,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--train_iters',
         type=int,
-        default=15000,
+        default=100000,
         help='Mention the number of training iterations')
 
     parser.add_argument(
@@ -184,7 +198,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--save_every',
         type=int,
-        default=100,
+        default=5000,
         help='Number of iterations after which model is saved')
 
     parser.add_argument(
@@ -202,7 +216,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--optim_id',
         type=int,
-        default=2,
+        default=1,
         help='1. adam, 2. SGD + momentum')
 
     parser.add_argument(
@@ -220,7 +234,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--loss_id',
         type=int,
-        default=0,
+        default=1,
         help='0:huber, 1:l2')
 
     args = parser.parse_args()

@@ -25,6 +25,7 @@ from utils.metrics import metric_interpolated_frame
 from models import skip_separate_encoder_bipn
 from models import skip_unet_separate_encoder_bipn
 from models import slomo
+from models import separate_encoder_bipn
 from models import vgg16
 
 def testing(info):
@@ -125,6 +126,14 @@ def testing(info):
                     t_steps=n_IF,
                     verbose=False)
                 test_rec_iFrames = test_output[0]
+
+        elif info['model_name'] == 'separate_bipn':
+            with tf.variable_scope('separate_bipn'):
+                test_rec_iFrames = separate_encoder_bipn.build_bipn(
+                    test_fFrames,
+                    test_lFrames,
+                    use_batch_norm=True,
+                    is_training=False)
 
         print('Global parameters:{}'.format(
             count_parameters(tf.global_variables())))
@@ -274,10 +283,10 @@ if __name__ == '__main__':
 
     exp_name = exp_name.format(str(window_size))
     # model = model.format(str(window_size - 2), str(out_channels))
-    model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-3_startOutChannels-4'
+    model = 'separate_bipn_100000_32_adam_1e-3_l2'
 
     info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
-    info['model_name'] = 'unet'
+    info['model_name'] = 'separate_bipn'
     info['batch_size'] = 32
     info['loss'] = 'l2'
     info['n_IF'] = window_size - 2

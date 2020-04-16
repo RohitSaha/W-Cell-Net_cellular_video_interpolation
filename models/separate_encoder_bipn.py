@@ -1,10 +1,10 @@
 import tensorflow as tf
 
-from models.utils.layer import linear as MLP
-from models.utils.layer import conv_batchnorm_relu as CBR
-from models.utils.layer import upconv_2D as UC
-from models.utils.layer import maxpool as MxP
-from models.utils.layer import avgpool as AvP
+from utils.layer import linear as MLP
+from utils.layer import conv_batchnorm_relu as CBR
+from utils.layer import upconv_2D as UC
+from utils.layer import maxpool as MxP
+from utils.layer import avgpool as AvP
 
 def conv_block(inputs, block_name='block_1',
                 out_channels=16,
@@ -24,7 +24,7 @@ def conv_block(inputs, block_name='block_1',
             use_batch_norm=use_batch_norm)
 
         conv_2 = CBR(
-            conv_1, 'conv_2', out_channels*2,
+            conv_1, 'conv_2', out_channels,
             activation=tf.keras.activations.relu,
             kernel_size=kernel_size, stride=stride,
             is_training=is_training,
@@ -43,7 +43,7 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_1 = conv_block(
         inputs, block_name='block_1',
-        out_channels=8, kernel_size=3,
+        out_channels=16, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -58,7 +58,7 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_2 = conv_block(
         encode_1, block_name='block_2',
-        out_channels=16, kernel_size=3,
+        out_channels=32, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -73,7 +73,7 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_3 = conv_block(
         encode_2, block_name='block_3',
-        out_channels=32, kernel_size=3,
+        out_channels=64, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -88,7 +88,7 @@ def encoder(inputs, use_batch_norm=False,
 
     encode_4 = conv_block(
         encode_3, block_name='block_4',
-        out_channels=64, kernel_size=3,
+        out_channels=128, kernel_size=3,
         stride=1,
         use_batch_norm=use_batch_norm,
         is_training=is_training)
@@ -145,7 +145,7 @@ def decoder(inputs, use_batch_norm=False,
         kernel_size=3, stride=1,
         out_channels=128,
         use_bias=True)
-    if is_verbose: print('Decode_1:{}'.format(decode_1))
+    if is_verbose: print('Decode_1:{}'.format(decode_1.shape))
 
     decode_2 = upconv_block(
         decode_1,
@@ -154,7 +154,7 @@ def decoder(inputs, use_batch_norm=False,
         kernel_size=3, stride=1,
         out_channels=64,
         use_bias=True)
-    if is_verbose: print('Decode_2:{}'.format(decode_2))
+    if is_verbose: print('Decode_2:{}'.format(decode_2.shape))
 
     decode_3 = upconv_block(
         decode_2,
@@ -163,7 +163,7 @@ def decoder(inputs, use_batch_norm=False,
         kernel_size=3, stride=1,
         out_channels=32,
         use_bias=True)
-    if is_verbose: print('Decode_3:{}'.format(decode_3))
+    if is_verbose: print('Decode_3:{}'.format(decode_3.shape))
 
     decode_4 = upconv_block(
         decode_3,
@@ -172,7 +172,7 @@ def decoder(inputs, use_batch_norm=False,
         kernel_size=3, stride=1,
         out_channels=n_IF,
         use_bias=True)
-    if is_verbose: print('Decode_4:{}'.format(decode_4))
+    if is_verbose: print('Decode_4:{}'.format(decode_4.shape))
                
     return decode_4
 
@@ -221,6 +221,6 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
     rec_iFrames = tf.expand_dims(
         rec_iFrames,
         axis=-1)
-    print('Final decoder:{}'.format(rec_iFrames))
+    print('Final decoder:{}'.format(rec_iFrames.shape))
 
     return rec_iFrames
