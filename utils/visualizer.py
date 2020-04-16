@@ -32,10 +32,12 @@ def visualize_frames(start_frames, end_frames,
     # start+ end + num_midframes
     num_cols = 2 + mid_frames.shape[1]
 
-    selected_samples = np.random.choice(
-        mid_frames.shape[0],
-        num_samples,
-        replace = False) # array of shuffled indicies
+    # selected_samples = np.random.choice(
+    #     mid_frames.shape[0],
+    #     num_samples,
+    #     replace = False) # array of shuffled indicies
+
+    selected_samples = np.arange(num_samples)
 
     # subsample the batch for plotting
 
