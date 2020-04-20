@@ -127,7 +127,12 @@ def gaussian_filter(img,k_size=(7,7),mean=0,std=3):
 
 
 def random_brightness(frames):
-
+    '''Performs brightness augmentation
+    Args:
+        frames: 'Tensor' of dtype tf.uint8
+    Returns:
+        Augmented 'Tensor'
+    '''
     delta_var = tf.random_uniform(
         shape=[],
         dtype=tf.float32) * 0.2
@@ -140,7 +145,12 @@ def random_brightness(frames):
 
 
 def random_contrast(frames):
-    
+    '''Performs contrast augmentation
+    Args:
+        frames: 'Tensor' of dtype tf.uint8
+    Returns:
+        Augmented 'Tensor'
+    '''
     frames = tf.image.random_contrast(
         frames,
         0.9,
@@ -150,7 +160,12 @@ def random_contrast(frames):
 
 
 def random_lr_flip(frames):
-
+    '''Performs random left-right flip
+    Args:
+        frames: 'Tensor' of dtype tf.uint8
+    Returns:
+        Augmented 'Tensor'
+    '''
     def __lr_flip(frames):
         frames = tf.image.flip_left_right(
             frames)
@@ -171,7 +186,12 @@ def random_lr_flip(frames):
 
 
 def random_ud_flip(frames):
-
+    '''Performs random up-down flips
+    Args:
+        frames: 'Tensor' of dtype tf.uint8
+    Returns:
+        Augmented 'Tensor'
+    '''
     def __ud_flip(frames):
         frames = tf.image.flip_up_down(
             frames)
@@ -191,7 +211,17 @@ def random_ud_flip(frames):
     return frames
 
 def augment(fFrame, lFrame, iFrame):
-
+    '''Performs series of augmentations
+    Args:
+        fFrame: 'Tensor' of dtype tf.uint8
+            containing first frame
+        lFrame: 'Tensor' of dtype tf.uint8
+            containing last frame
+        iFrame: 'Tensor' of dtype tf.uint8
+            containing intermediate frames
+    Returns:
+        Augmented 'Tensors'
+    '''
     # Transpose and slice to get [H, W, C]
     iFrame = tf.transpose(
         iFrame,
