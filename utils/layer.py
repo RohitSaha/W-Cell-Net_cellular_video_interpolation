@@ -4,8 +4,22 @@ def linear(input_var, layer_name, output_units,
         activation=tf.keras.activations.relu,
         initializer=tf.keras.initializers.glorot_normal,
         batch_norm=False,
-        update_collection=False,
         is_training=True):
+    '''Performs fully connected layer calculations 
+    Args:
+        input_var: 2-D 'Tensor' representing input
+        layer_name: 'String' representing name of layer
+            for scoping
+        output_units: 'Integer' to specify number of
+            nodes in next layer
+        activation: 'Keras.activation' to specify the
+            type of non-linearity to be applied
+        initializer: To specify weight init type
+        batch_norm: 'Bool' to specify whether to use BN
+        is_training: 'Bool' to specify training mode
+    Returns: 
+        2-D 'Tensor' of dtype tf.float32 
+    '''
 
     # Get shape of a tensor as a list
     shape = input_var.get_shape().as_list()
@@ -43,6 +57,14 @@ def linear(input_var, layer_name, output_units,
 
 def channel_attention(input_var,
         activation=tf.keras.activations.softmax):
+    '''Performs naive channel activation 
+    Args:
+        input_var: 4-D 'Tensor' representing input
+        activation: 'Keras.activation' to specify the
+            type of non-linearity to be applied
+    Returns: 
+        4-D 'Tensor' of dtype tf.float32 
+    '''
 
     shape = input_var.get_shape().as_list()
     N, H, W, C = shape
@@ -60,6 +82,14 @@ def channel_attention(input_var,
 
 def spatial_attention(input_var,
         activation=tf.keras.activations.softmax):
+    '''Performs naive spatial activation 
+    Args:
+        input_var: 4-D 'Tensor' representing input
+        activation: 'Keras.activation' to specify the
+            type of non-linearity to be applied
+    Returns: 
+        4-D 'Tensor' of dtype tf.float32 
+    '''
 
     shape = input_var.get_shape().as_list()
     N, H, W, C = shape
@@ -99,12 +129,29 @@ def conv_batchnorm_relu(input_var, layer_name,
         kernel_size=1,
         stride=1,
         padding='SAME',
-        spectral_norm_flag=False,
-        update_collection=False,
         is_training=True,
         use_batch_norm=False,
         initializer=tf.random_normal_initializer):
-
+    '''Performs conv -> batchnorm -> relu operations
+    Args:
+        input_var: 4-D or 5-D 'Tensor' representing input
+        layer_name: 'String' representing name of layer
+            for scoping
+        out_channels: 'Integer' to specify number of
+            output filters
+        activation: 'Keras.activation' to specify the
+            type of non-linearity to be applied
+        kernel_size: 'Integer' to specify spatial
+                dimension of filters
+        stride: 'Integer' to specify strides of the
+                convolution
+        padding: one of 'VALID' or 'SAME'
+        is_training: 'Bool' to specify training mode
+        use_batch_norm: 'Bool' to specify whether to use BN
+        initializer: To specify weight init type
+    Returns: 
+        4-D/5-D 'Tensor' of dtype tf.float32 
+    '''
     shape = input_var.get_shape().as_list()
     in_channels = shape[-1]
     k = kernel_size
@@ -173,7 +220,7 @@ def upconv_2D(input_var, layer_name, n_filters,
                 kernel_size=(2, 2), strides=(2, 2),
                 use_bias=True, padding='valid'):
 
-    '''Up convolution tensor
+    '''Up convolutions tensor
     Args:
         input_var: Tensor (N, H, W, C) representing input
         layer_name: String representing name of layer for scoping
@@ -218,7 +265,19 @@ def upconv_2D(input_var, layer_name, n_filters,
 
 def maxpool(input_var, layer_name, ksize,
     strides, padding='SAME'):
-
+    '''Performs max-pooling operation
+    Args:
+        input_var: 4-D/5-D 'Tensor' representing input
+        layer_name: 'String' representing name of layer
+            for scoping
+        ksize: 'Tuple' to specify spatial
+                dimensions of pooling window
+        strides: 'Tuple' to specify strides of the
+                pooling window
+        padding: one of 'VALID' or 'SAME'
+    Returns: 
+        4-D/5-D 'Tensor' of dtype tf.float32 
+    '''
     shape = input_var.get_shape().as_list()
 
     if len(shape) == 4:
@@ -243,6 +302,19 @@ def maxpool(input_var, layer_name, ksize,
 
 def avgpool(input_var, ksize, strides,
     padding='SAME'):
+    '''Performs average-pooling operation
+    Args:
+        input_var: 4-D/5-D 'Tensor' representing input
+        layer_name: 'String' representing name of layer
+            for scoping
+        ksize: 'Tuple' to specify spatial
+                dimensions of pooling window
+        strides: 'Tuple' to specify strides of the
+                pooling window
+        padding: one of 'VALID' or 'SAME'
+    Returns: 
+        4-D/5-D 'Tensor' of dtype tf.float32 
+    '''
 
     shape = input_var.get_shape().as_list()
 
