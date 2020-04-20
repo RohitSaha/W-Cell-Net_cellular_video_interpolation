@@ -13,8 +13,8 @@ Default training hyperparameters (unless specified otherwise):
 7. L2 weight decay (if used): 1e-5
 
 Training models:
-1. Train W-Cell-Net-16 (k=16, IF=3): bash run_unet_separate_encoder_bipn.sh 16 3 slack_20px_fluorescent_window_5
-2. Train BiPN (k-16, IF=3): python train_separate_encoder_bipn.py --n_IF 3 --experiment_name slack_20px_fluorescent_window_5 --batch_size 16
+1. Train W-Cell-Net-16 (k=16, IF=3): bash run_wnet.sh 16 3 slack_20px_fluorescent_window_5
+2. Train BiPN (k-16, IF=3): python train_BiPN.py --n_IF 3 --experiment_name slack_20px_fluorescent_window_5 --batch_size 16
 3. Train Super SloMo (IF=3): bash run_slowmo.sh 3 slack_20px_fluorescent_window_5
 
 Testing models:
