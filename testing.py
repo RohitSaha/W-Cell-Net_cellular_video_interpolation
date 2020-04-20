@@ -22,7 +22,7 @@ from utils.metrics import metric_repeat_lframe
 from utils.metrics import metric_weighted_frame
 from utils.metrics import metric_interpolated_frame
 
-from models import skip_unet_separate_encoder_bipn
+from models import wnet
 from models import slomo
 from models import BiPN
 from models import vgg16
@@ -103,7 +103,7 @@ def testing(info):
                         is_verbose=False)
 
                 elif info['model_name'] == 'wnet':
-                    test_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
+                    test_rec_iFrames = wnet.build_wnet(
                         test_fFrames,
                         test_lFrames,
                         use_batch_norm=True,

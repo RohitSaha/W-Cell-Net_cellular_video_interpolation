@@ -24,7 +24,7 @@ from utils.losses import perceptual_loss
 from utils.losses import tf_perceptual_loss
 from utils.visualizer import visualize_frames
 
-from models import skip_unet_separate_encoder_bipn
+from models import wnet
 from models import vgg16
 
 def training(args):
@@ -67,9 +67,10 @@ def training(args):
                 batch_size=args.batch_size,
                 n_intermediate_frames=args.n_IF)
 
+        # Ignore scoping name
         with tf.variable_scope('separate_bipn'):
             print('TRAIN FRAMES (first):')
-            train_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
+            train_rec_iFrames = wnet.build_wnet(
                 train_fFrames,
                 train_lFrames,
                 use_batch_norm=True,
@@ -82,7 +83,7 @@ def training(args):
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
-            val_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
+            val_rec_iFrames = wnet.build_wnet(
                 val_fFrames,
                 val_lFrames,
                 use_batch_norm=True,

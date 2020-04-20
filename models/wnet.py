@@ -267,7 +267,7 @@ def decoder(inputs, layer_dict_fFrames,
     return decode_4
 
 
-def build_bipn(fFrames, lFrames, n_IF=3, use_batch_norm=False,
+def build_wnet(fFrames, lFrames, n_IF=3, use_batch_norm=False,
                 is_training=False, starting_out_channels=8,
                 use_attention=0, input_layer_skip=False,
                 spatial_attention=0, is_verbose=False):
