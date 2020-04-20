@@ -5,7 +5,21 @@ def get_optimizer(train_loss, optim_id=1,
                     learning_rate=1e-3,
                     use_batch_norm=False,
                     var_list=[]):
-
+    '''Defines optimizer and returns it
+    Args:
+        train_loss: Scalar 'Tensor' of dtype
+            tf.float32
+        optim_id: 'Integer' to mention the
+            optimizer to be used
+        learning_rate: 'Float' to specify the
+            initial learning rate
+        use_batch_norm: 'Bool' to mention whether
+            batch norm is being used in the model
+        var_list: 'List' of 'Tensors' that have to
+            be optimizer. Useful for GANs
+    Returns:
+        Optimizer 'Tensor' that can be minimized
+    '''
     if optim_id == 1:
         optimizer = tf.train.AdamOptimizer(
             learning_rate=learning_rate)
@@ -39,6 +53,13 @@ def get_optimizer(train_loss, optim_id=1,
 
 
 def count_parameters(variables):
+    '''Counts network parameters
+    Args:
+        variables: 'List' of 'Tensors' initialized
+            in a model
+    Returns:
+        'Integer' specifying the number of parameters
+    '''
     return np.sum(
         [np.prod(
             v.get_shape().as_list())
