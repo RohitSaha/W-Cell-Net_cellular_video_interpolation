@@ -88,7 +88,7 @@ def testing(info):
                 n_intermediate_frames=n_IF,
                 allow_smaller_final_batch=False)
 
-        if info['model_name'] in ['skip', 'unet']:
+        if info['model_name'] in ['skip', 'wnet']:
             with tf.variable_scope('separate_bipn'):
                 print('TEST FRAMES (first):')
                 if info['model_name'] == 'skip':
@@ -103,7 +103,7 @@ def testing(info):
                         spatial_attention=spatial_attention,
                         is_verbose=False)
 
-                elif info['model_name'] == 'unet':
+                elif info['model_name'] == 'wnet':
                     test_rec_iFrames = skip_unet_separate_encoder_bipn.build_bipn(
                         test_fFrames,
                         test_lFrames,
@@ -127,8 +127,8 @@ def testing(info):
                     verbose=False)
                 test_rec_iFrames = test_output[0]
 
-        elif info['model_name'] == 'separate_bipn':
-            with tf.variable_scope('separate_bipn'):
+        elif info['model_name'] == 'bipn':
+            with tf.variable_scope('bipn'):
                 test_rec_iFrames = separate_encoder_bipn.build_bipn(
                     test_fFrames,
                     test_lFrames,
@@ -262,6 +262,12 @@ if __name__ == '__main__':
         description='params of running an experiment')
 
     parser.add_argument(
+        '--model_name',
+        default='wnet',
+        type=String,
+        help='Mention the model to test')
+    
+    parser.add_argument(
         '--window_size',
         default=5,
         type=int,
@@ -287,7 +293,7 @@ if __name__ == '__main__':
     model = model.format(str(window_size - 2), str(out_channels))
 
     info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
-    info['model_name'] = 'unet'
+    info['model_name'] = args.model_name
     info['batch_size'] = 32
     info['loss'] = 'l2'
     info['n_IF'] = window_size - 2
