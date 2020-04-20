@@ -3,7 +3,18 @@ import cv2
 import numpy as np
 
 def pad_image(image, targetHeight, targetWidth):        
-
+    '''Resizes the image along the longer dimension
+    and pads the shorter dimension on both sides
+    equally.
+    Args:
+        image: 'Numpy' matrix of dtype np.float32
+        targetHeight: 'Integer' specifying the height
+            of the image
+        targetWidth: 'Integer' specifying the width
+            of the image
+    Returns:
+        Resized and padded image
+    '''
     height, width  = image.shape
         
     height_diff = targetHeight - height
