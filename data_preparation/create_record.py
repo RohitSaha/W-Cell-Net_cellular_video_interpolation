@@ -9,7 +9,15 @@ import tensorflow as tf
 import resize
 
 def get_data(IMAGE_DIR, window):
-    
+    '''Returns list of data points
+    Args:
+        IMAGE_DIR: 'String' that points to
+            image directory
+        window: 'Integer' to specify the
+            size of the tuple
+    Returns:
+        'List' of data points sampled
+    '''    
     data = []
 
     folders = os.listdir(
@@ -36,7 +44,17 @@ def get_data(IMAGE_DIR, window):
     return data
 
 def get_splits(data, val_split, test_split):
-
+    '''Returns splits of data
+    Args:
+        data: 'List' of data samples
+        val_split: 'Float' to mention the fraction of
+            validation data
+        test_split: 'Float' to mention the fraction of
+            test data
+    Returns:
+        3 'List' variables containing the training,
+        validation and testing samples
+    '''
     train_split = 1.0 - (val_split + test_split)
 
     random.shuffle(data)
@@ -56,11 +74,27 @@ def get_splits(data, val_split, test_split):
 
 ##### TF helper functions #####
 def _bytes_feature(value):
+    '''Returns serialized data
+    Args:
+        value: 'Tensor' containing data
+    Returns:
+        Serialized data
+    '''
     return tf.train.Feature(
         bytes_list=tf.train.BytesList(
             value=[value]))
 
 def feat_example(fFrame, lFrame, iFrames, metaFileNames):
+    '''Computes TF examples
+    Args:
+        fFrame: 'Numpy' matrix of dtype np.float32 containing
+            first frame data
+        lFrame: 'Numpy' matrix of dtype  np.float32 containing
+            last frame data
+        iFrames: 'Numpy' matrix of dtype np.float32 containing
+            intermediate frames data
+        metaFileNames: 'String' that contains meta information
+    '''
     assert fFrame.shape == (100, 100, 1), 'Error'
     assert lFrame.shape == (100, 100, 1), 'Error'
     assert iFrames.shape == (3, 100, 100, 1), 'Error'
@@ -86,10 +120,21 @@ def feat_example(fFrame, lFrame, iFrames, metaFileNames):
     return example
 
 def read_image(filename):
+    '''Returns np.float32 format image
+    Args:
+        filename: 'String' containing path to image
+    Returns:
+        'Numpy' grayscale image of dtype np.float32
+    '''
     return cv2.imread(
         filename, 0)
 
 def dump_pickle(filename, data):
+    '''Dumps pickle file
+    Args:
+        filename: 'String' containing dump path
+        data: 'Dict' containing data samples
+    '''
     with open(filename, 'wb') as handle:
         pickle.dump(
             data,
@@ -97,7 +142,16 @@ def dump_pickle(filename, data):
 
 def write_tfr(TFR_DIR, data, targetHeight=100,
                 targetWidth=100):
-
+    '''Create TF Records
+    Args:
+        TFR_DIR: 'String' that points to directory
+            where data will be written
+        data: 'Dict' that stores samples
+        targetHeight: 'Integer' to specify the height
+            of each frame
+        targetHeight: 'Integer' to specify the width
+            of each frame
+    '''
     writer = tf.python_io.TFRecordWriter(
         TFR_DIR)
 
@@ -169,7 +223,10 @@ def write_tfr(TFR_DIR, data, targetHeight=100,
 
 
 def control(args):
-    
+    '''Interface method
+    Args:
+        args: 'ArgumentParser' containing meta information
+    ''' 
     TFR_DIR = os.path.join(
         args.TFR_DIR,
         'slack_20px_fluorescent_window_{}'.format(
