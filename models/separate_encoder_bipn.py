@@ -178,7 +178,7 @@ def decoder(inputs, use_batch_norm=False,
 
 
 def build_bipn(fFrames, lFrames, use_batch_norm=False,
-                is_training=False):
+                is_training=False, n_IF=3):
 
     with tf.variable_scope('encoder_1'):
         encode_fFrames = encoder(
@@ -212,6 +212,7 @@ def build_bipn(fFrames, lFrames, use_batch_norm=False,
         rec_iFrames = decoder(
             encode_Frames,
             use_batch_norm=use_batch_norm,
+            n_IF=n_IF,
             is_training=is_training,
             is_verbose=True)
 

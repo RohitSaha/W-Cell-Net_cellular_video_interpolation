@@ -14,10 +14,12 @@ from utils.optimizer import get_optimizer
 from utils.optimizer import count_parameters
 from utils.losses import huber_loss
 from utils.losses import tf_l2_loss
+from utils.losses import tf_perceptual_loss
 from utils.visualizer import visualize_frames
 
 from models import bipn
 from models import separate_encoder_bipn
+from models import vgg16
 
 def training(args):
     
@@ -34,7 +36,7 @@ def training(args):
     CKPT_PATH = os.path.join(
         ROOT_DIR,
         args.experiment_name,
-        'separate_bipn_100000_32_adam_1e-3_l2/')
+        'separate_bipn_100000_16_nIF-4_adam_1e-3_l2_perceptualLoss-conv5-3-1e-4/')
 
     # SCOPING BEGINS HERE
     with tf.Session().as_default() as sess:
@@ -46,6 +48,7 @@ def training(args):
             read_and_decode(
                 filename_queue=train_queue,
                 is_training=True,
+                n_intermediate_frames=args.n_IF,
                 batch_size=args.batch_size)
 
         val_queue = tf.train.string_input_producer(
@@ -54,6 +57,7 @@ def training(args):
             read_and_decode(
                 filename_queue=val_queue,
                 is_training=False,
+                n_intermediate_frames=args.n_IF,
                 batch_size=args.batch_size)
 
         with tf.variable_scope('separate_bipn'):
@@ -61,6 +65,7 @@ def training(args):
             train_rec_iFrames = separate_encoder_bipn.build_bipn(
                 train_fFrames,
                 train_lFrames,
+                n_IF=args.n_IF,
                 use_batch_norm=True,
                 is_training=True)
 
@@ -69,9 +74,22 @@ def training(args):
             val_rec_iFrames = separate_encoder_bipn.build_bipn(
                 val_fFrames,
                 val_lFrames,
+                n_IF=args.n_IF,
                 use_batch_norm=True,
                 is_training=False)
-            
+                     
+        # Weights should be kept locally ~ 500 MB space
+        with tf.variable_scope('vgg16'):
+            train_iFrames_features = vgg16.build_vgg16(
+                train_iFrames,
+                end_point='conv5_3').features
+        with tf.variable_scope('vgg16', reuse=tf.AUTO_REUSE):
+            train_rec_iFrames_features = vgg16.build_vgg16(
+                train_rec_iFrames,
+                end_point='conv5_3').features
+
+        print('Global parameters:{}'.format(
+            count_parameters(tf.global_variables())))   
         print('Model parameters:{}'.format(
             count_parameters(tf.trainable_variables())))
 
@@ -90,6 +108,12 @@ def training(args):
             val_loss = tf_l2_loss(
                 val_iFrames, val_rec_iFrames) 
         
+        train_perceptual_loss = tf_perceptual_loss(
+            train_iFrames_features,
+            train_rec_iFrames_features)
+
+        train_loss += train_perceptual_loss * 1e-4
+
         # SUMMARIES
         tf.summary.scalar('train_loss', train_loss)
         tf.summary.scalar('val_loss', val_loss)
@@ -210,7 +234,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--experiment_name',
         type=str,
-        default='slack_20px_fluorescent_window_5',
+        default='slack_20px_fluorescent_window_6',
         help='to mention the experiment folder in tf_records')
 
     parser.add_argument(
@@ -218,6 +242,12 @@ if __name__ == '__main__':
         type=int,
         default=1,
         help='1. adam, 2. SGD + momentum')
+
+    parser.add_argument(
+        '--n_IF',
+        type=int,
+        default=4,
+        help='Specifies number of intermediate frames')
 
     parser.add_argument(
         '--learning_rate',

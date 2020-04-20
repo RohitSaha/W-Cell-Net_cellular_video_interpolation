@@ -132,6 +132,7 @@ def testing(info):
                 test_rec_iFrames = separate_encoder_bipn.build_bipn(
                     test_fFrames,
                     test_lFrames,
+                    n_IF=n_IF,
                     use_batch_norm=True,
                     is_training=False)
 
@@ -229,6 +230,7 @@ def testing(info):
         print('Testing complete.....')
         
 
+    # Calculate metrics:
     mean_rf = sum(metrics['repeat_first']) / test_samples
     mean_rl = sum(metrics['repeat_last']) / test_samples
     mean_wf = sum(metrics['weighted_frames']) / test_samples
@@ -275,18 +277,17 @@ if __name__ == '__main__':
 
     ROOT_DIR = '/media/data/movie/dataset/tf_records/'
     exp_name = 'slack_20px_fluorescent_window_{}/'
-    # model = 'skip_conn_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
+    model = 'unet_separate_encoder_bipn_100000_32_adam_0.001_l2_nIF-{}_startOutChannels-{}'
     info = {}
 
     window_size = args.window_size
     out_channels = args.out_channels
 
     exp_name = exp_name.format(str(window_size))
-    # model = model.format(str(window_size - 2), str(out_channels))
-    model = 'separate_bipn_100000_32_adam_1e-3_l2'
+    model = model.format(str(window_size - 2), str(out_channels))
 
     info['model_path'] = os.path.join(ROOT_DIR, exp_name, model + '/')
-    info['model_name'] = 'separate_bipn'
+    info['model_name'] = 'unet'
     info['batch_size'] = 32
     info['loss'] = 'l2'
     info['n_IF'] = window_size - 2
@@ -296,75 +297,4 @@ if __name__ == '__main__':
     info['TEST_REC_PATH'] = os.path.join(ROOT_DIR, exp_name, 'test.tfrecords')
 
     testing(info)
-
-# LEGACY CODE:
-def control(args):
-
-    # get runnable files
-    runnables = get_files()
-    print('Experiments to run:')
-    for runnable in runnables:
-        print(runnable)
-
-    master_metrics = {}
-    best_rf = float('inf')
-    best_rl = float('inf')
-    best_wf = float('inf')
-    best_if = float('inf')
-
-    for model_path_id in range(len(runnables)):
-        metrics, test_samples = testing(
-            runnable[model_path_id],
-            args)        
-
-        rep_first = metrics['repeat_first']
-        rep_last = metrics['repeat_last']
-        weight_frames = metrics['weighted_frames']
-        inter_frames = metrics['inter_frames']
-    
-        mean_rf = sum(rep_first) / test_samples
-        mean_rl = sum(rep_last) / test_samples
-        mean_wf = sum(weight_frames) / test_samples
-        mean_if = sum(inter_frames) / test_samples
-
-        master_metrics[runnable[model_path_id]] = [
-            mean_rf, mean_rl, mean_wf, mean_if]
-
-        # Get the best model out of all models
-        if mean_rf < best_rf:
-            best_rf = mean_rf
-            best_rf_model = runnables[model_path_id]
-        if mean_rl < best_rl:
-            best_rl = mean_rl
-            best_rl_model = runnables[model_path_id]
-        if mean_wf < best_wf:
-            best_wf = mean_wf
-            best_wf_model = runnables[model_path_id]
-        if mean_if < best_if:
-            best_if = mean_if
-            best_if_model = runnables[model_path_id]
-
-    print('Evaluated all models.....')
-
-    path = '/media/data/movie/dataset/tf_records'
-    files = os.listdir(path)
-    files = [
-        fi
-        for fi in files
-        if fi.endswith('pkl')]
-    with open(path + '/master_metics_{}.pkl'.format(str(len(files))),\
-        'wb') as handle:
-        pickle.dump(master_metrics, handle)
-    print('Master metric file dumped.....')
-
-    print('Best stats:')
-    print('Model with lowest rep_first loss:{}, {}'.format(
-        best_rf_model, best_rf))
-    print('Model with lowest rep_last loss:{}, {}'.format(
-        best_rl_model, best_rl))
-    print('Model with lowest weighted loss:{}, {}'.format(
-        best_wf_model, best_wf))
-    print('Model with lowest interframe loss:{}, {}'.format(
-        best_if_model, best_if))
-
 
