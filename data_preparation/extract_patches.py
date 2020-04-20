@@ -9,8 +9,6 @@ import argparse
 import time
 import os
 
-#TODO: change default folders based on Valrhona dir struct
-
 def get_unique_ids(image):
     '''Returns the unique elements in a
     matrix.
