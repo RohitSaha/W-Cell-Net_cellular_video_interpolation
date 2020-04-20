@@ -1,4 +1,4 @@
-# cellular_video_interpolation
+# W-Cell-Net_cellular_video_interpolation
 
 All experiments were executed on an NVIDIA Quadro P6000 24 GB GPU.
 
