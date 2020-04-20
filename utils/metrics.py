@@ -103,6 +103,18 @@ def metric_interpolated_frame(mid_frames,
 			compute_psnr(mid_frames,rec_mid_frames)]
 
 def compute_psnr(ref, target):
+	'''
+	Computes PSNR between the true frames 
+	and the networks interpolation
+
+	Args:
+		rec: 'Tensor', [B,inter_frames,H,W,1]
+		target: 'Tensor', [B,inter_frames,H,W,1]
+		
+	Output:
+		PSNR between predicion and ground truth
+	'''
+
     diff = target - ref
     sqr = tf.multiply(diff, diff)
     err = tf.reduce_sum(sqr)
