@@ -264,7 +264,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--model_name',
         default='wnet',
-        type=String,
+        type=str,
         help='Mention the model to test')
     
     parser.add_argument(
