@@ -9,7 +9,8 @@ def visualize_frames(start_frames, end_frames,
                     iteration=100, save_path='',
                     training=False,
                     num_plots=3):
-    '''
+    '''Helper function to plot interpolated results
+    and save plots to local disk
     Args
     	start_frames: (batch_size X height X width X 1 )
     	end_frames: (batch_size X height X width X 1)
@@ -140,7 +141,8 @@ def visualize_frames(start_frames, end_frames,
 def visualize_tensorboard(start_frames, end_frames,
     mid_frames, rec_mid_frames, num_plots = 3):
     
-    '''
+    '''Function to continuously update plots in
+    Tensorboard in real time
     Args
         start_frames: (batch_size X height X width X 1 )
         end_frames: (batch_size X height X width X 1)
