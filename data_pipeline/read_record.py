@@ -7,7 +7,25 @@ def read_and_decode(filename_queue=[], is_training=False,
                     batch_size=32, height=100, width=100,
                     n_intermediate_frames=3,
                     allow_smaller_final_batch=False):
-
+    '''Reads batches of data from TF Records
+    Args:
+        filename_queue: 'List' that contains TF Records
+        is_training: 'Bool' to specify training mode
+        batch_size: 'Integer' to specify number of samples
+            to be fetched in each iteration
+        height: 'Integer' to specify the target height of
+            each frame
+        width: 'Interger' to specify the target width of
+            each frame
+        n_intermediate_frames: 'Interger' to mention the
+            number of intermediate frames
+        allow_smaller_final_batch: 'Bool' to specify whether
+            the last batch is allowed to have samples < batch_size
+    Returns:
+        'Tensors' of dtype tf.float32 containing batches of
+        first, intermediate and last frames along with
+        meta information
+    '''
     reader = tf.TFRecordReader()
     _, ser = reader.read(
         filename_queue)
@@ -95,6 +113,9 @@ def read_and_decode(filename_queue=[], is_training=False,
 
 
 def unit_test():
+    '''Performs unit testing to validate efficiency of
+    data input pipeline.
+    '''
     current_path = os.path.join(
         '/neuhaus/movie/dataset',
         'tf_records',
