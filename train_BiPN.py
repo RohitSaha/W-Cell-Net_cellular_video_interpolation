@@ -17,8 +17,7 @@ from utils.losses import tf_l2_loss
 from utils.losses import tf_perceptual_loss
 from utils.visualizer import visualize_frames
 
-from models import bipn
-from models import separate_encoder_bipn
+from models import BiPN 
 from models import vgg16
 
 def training(args):
@@ -62,7 +61,7 @@ def training(args):
 
         with tf.variable_scope('separate_bipn'):
             print('TRAIN FRAMES (first):')
-            train_rec_iFrames = separate_encoder_bipn.build_bipn(
+            train_rec_iFrames = BiPN.build_bipn(
                 train_fFrames,
                 train_lFrames,
                 n_IF=args.n_IF,
@@ -71,7 +70,7 @@ def training(args):
 
         with tf.variable_scope('separate_bipn', reuse=tf.AUTO_REUSE):
             print('VAL FRAMES (first):')
-            val_rec_iFrames = separate_encoder_bipn.build_bipn(
+            val_rec_iFrames = BiPN.build_bipn(
                 val_fFrames,
                 val_lFrames,
                 n_IF=args.n_IF,

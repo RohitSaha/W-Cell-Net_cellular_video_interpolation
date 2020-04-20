@@ -22,10 +22,9 @@ from utils.metrics import metric_repeat_lframe
 from utils.metrics import metric_weighted_frame
 from utils.metrics import metric_interpolated_frame
 
-from models import skip_separate_encoder_bipn
 from models import skip_unet_separate_encoder_bipn
 from models import slomo
-from models import separate_encoder_bipn
+from models import BiPN
 from models import vgg16
 
 def testing(info):
@@ -129,7 +128,7 @@ def testing(info):
 
         elif info['model_name'] == 'bipn':
             with tf.variable_scope('bipn'):
-                test_rec_iFrames = separate_encoder_bipn.build_bipn(
+                test_rec_iFrames = BiPN.build_bipn(
                     test_fFrames,
                     test_lFrames,
                     n_IF=n_IF,
